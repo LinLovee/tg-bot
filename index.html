@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Дейтинг Апп</title>
+    <title>💕 Dating App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
@@ -18,8 +18,9 @@
             --text: #000000;
             --text-secondary: #666666;
             --border: #e5e5e7;
-            --accent: #007aff;
+            --accent: #ff5a5f;
             --success: #34c759;
+            --warning: #ff9500;
             --shadow: rgba(0, 0, 0, 0.1);
         }
 
@@ -32,35 +33,102 @@
             --shadow: rgba(255, 255, 255, 0.1);
         }
 
-        html {
-            scroll-behavior: smooth;
-        }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg);
             color: var(--text);
             transition: background 0.3s, color 0.3s;
-            padding-top: max(20px, env(safe-area-inset-top));
-            padding-bottom: max(100px, env(safe-area-inset-bottom));
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
+            padding-bottom: 120px;
         }
 
         .container {
             max-width: 420px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 16px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
+            padding-top: 12px;
         }
 
         .header h1 {
             font-size: 28px;
-            margin-bottom: 4px;
+            margin-bottom: 8px;
+        }
+
+        /* GAMIFICATION - Stats Bar */
+        .stats-bar {
+            background: linear-gradient(135deg, var(--accent), #ff8a80);
+            color: white;
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            box-shadow: 0 8px 20px rgba(255, 90, 95, 0.3);
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            margin-top: 4px;
+            opacity: 0.9;
+        }
+
+        /* Achievement Badges */
+        .achievements {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding: 8px 0;
+        }
+
+        .achievement {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .achievement-badge {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .achievement.unlocked .achievement-badge {
+            background: linear-gradient(135deg, var(--success), #81c784);
+        }
+
+        .achievement.locked .achievement-badge {
+            background: var(--bg-secondary);
+            opacity: 0.5;
+        }
+
+        .achievement-name {
+            font-size: 9px;
+            max-width: 50px;
+            text-align: center;
+            color: var(--text-secondary);
         }
 
         .navbar {
@@ -74,6 +142,7 @@
             border-top: 1px solid var(--border);
             padding-bottom: max(10px, env(safe-area-inset-bottom));
             z-index: 100;
+            backdrop-filter: blur(10px);
         }
 
         .navbar.visible {
@@ -89,11 +158,29 @@
             color: var(--text-secondary);
             cursor: pointer;
             font-size: 24px;
-            transition: color 0.2s;
+            transition: all 0.2s;
+            position: relative;
         }
 
         .nav-btn.active {
             color: var(--accent);
+            transform: scale(1.1);
+        }
+
+        .nav-badge {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            background: var(--warning);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
         }
 
         .section {
@@ -106,17 +193,10 @@
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Profile Section */
         .profile-form {
             background: var(--bg-secondary);
             border-radius: 20px;
@@ -152,7 +232,6 @@
             min-height: 100px;
         }
 
-        /* Photo Upload */
         .photo-upload {
             position: relative;
             width: 150px;
@@ -180,17 +259,8 @@
             object-fit: cover;
         }
 
-        .photo-upload input[type="file"] {
-            display: none;
-        }
+        .photo-upload input[type="file"] { display: none; }
 
-        .photo-upload-text {
-            text-align: center;
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        /* Tags */
         .tags-container {
             display: flex;
             flex-wrap: wrap;
@@ -207,11 +277,6 @@
             cursor: pointer;
             transition: all 0.2s;
             font-size: 13px;
-            white-space: nowrap;
-        }
-
-        .tag:hover {
-            border-color: var(--accent);
         }
 
         .tag.selected {
@@ -232,26 +297,20 @@
         }
 
         .btn-primary {
-            background: var(--accent);
+            background: linear-gradient(135deg, var(--accent), #ff8a80);
             color: white;
+            box-shadow: 0 4px 12px rgba(255, 90, 95, 0.3);
         }
 
         .btn-primary:active {
             transform: scale(0.98);
-            opacity: 0.8;
         }
 
-        .btn-secondary {
-            background: var(--bg-secondary);
-            color: var(--text);
-            margin-top: 8px;
-        }
-
-        /* Discovery/Search Cards */
+        /* Card Stack */
         .card-stack {
             position: relative;
             width: 100%;
-            height: 500px;
+            height: 520px;
             margin-bottom: 20px;
         }
 
@@ -268,11 +327,7 @@
             box-shadow: 0 10px 30px var(--shadow);
             cursor: grab;
             user-select: none;
-            transition: transform 0.3s, opacity 0.3s;
-        }
-
-        .card.active {
-            z-index: 10;
+            overflow: hidden;
         }
 
         .card.swipe-right {
@@ -284,22 +339,16 @@
         }
 
         @keyframes swipeRight {
-            to {
-                transform: translateX(400px) rotate(20deg);
-                opacity: 0;
-            }
+            to { transform: translateX(400px) rotate(20deg); opacity: 0; }
         }
 
         @keyframes swipeLeft {
-            to {
-                transform: translateX(-400px) rotate(-20deg);
-                opacity: 0;
-            }
+            to { transform: translateX(-400px) rotate(-20deg); opacity: 0; }
         }
 
         .card-photo {
             width: 100%;
-            height: 250px;
+            height: 270px;
             background: var(--border);
             border-radius: 16px;
             object-fit: cover;
@@ -307,14 +356,16 @@
         }
 
         .card-info h2 {
-            font-size: 20px;
-            margin-bottom: 8px;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 6px;
         }
 
         .card-info p {
             color: var(--text-secondary);
             font-size: 14px;
             margin-bottom: 12px;
+            line-height: 1.4;
         }
 
         .card-tags {
@@ -327,42 +378,48 @@
         .card-tag {
             background: var(--accent);
             color: white;
-            padding: 4px 10px;
+            padding: 5px 10px;
             border-radius: 12px;
             font-size: 12px;
+            font-weight: 500;
         }
 
         .card-actions {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             justify-content: center;
         }
 
         .action-btn {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             border: none;
             border-radius: 50%;
-            font-size: 24px;
+            font-size: 32px;
             cursor: pointer;
             transition: all 0.2s;
+            font-weight: 600;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .action-btn.like {
-            background: var(--success);
+            background: linear-gradient(135deg, var(--success), #81c784);
             color: white;
         }
 
         .action-btn.dislike {
-            background: #ff3b30;
+            background: #ff6b6b;
             color: white;
         }
 
         .action-btn:active {
-            transform: scale(1.1);
+            transform: scale(0.9);
         }
 
-        /* Matches Section */
+        /* Matches Grid */
         .matches-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -376,15 +433,30 @@
             overflow: hidden;
             cursor: pointer;
             transition: all 0.2s;
+            position: relative;
+            box-shadow: 0 4px 12px var(--shadow);
         }
 
         .match-item:active {
             transform: scale(0.95);
         }
 
+        .match-status {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--success);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            z-index: 10;
+        }
+
         .match-photo {
             width: 100%;
-            height: 180px;
+            height: 200px;
             background: var(--border);
             object-fit: cover;
         }
@@ -399,95 +471,47 @@
             margin-bottom: 4px;
         }
 
-        .match-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
-
-        .match-tag {
-            background: var(--accent);
-            color: white;
-            padding: 2px 6px;
-            border-radius: 8px;
-            font-size: 10px;
-        }
-
-        /* Profile View */
-        .profile-view {
-            background: var(--bg-secondary);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .profile-header {
-            text-align: center;
-            margin-bottom: 16px;
-        }
-
-        .profile-avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: var(--accent);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-            margin: 0 auto 12px;
-        }
-
-        .profile-name {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .profile-city {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        .profile-stat {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 14px;
-        }
-
-        .profile-stat:last-child {
-            border-bottom: none;
-        }
-
-        /* Alerts */
-        .alert {
+        /* Notifications */
+        .notification {
             padding: 12px 16px;
             border-radius: 12px;
             margin-bottom: 16px;
             font-size: 14px;
+            animation: slideDown 0.3s;
         }
 
-        .alert.success {
-            background: #e8f5e9;
-            color: #1b5e20;
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .alert.warning {
-            background: #fff3e0;
-            color: #e65100;
+        .notification.success {
+            background: linear-gradient(135deg, var(--success), #81c784);
+            color: white;
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
         }
 
-        [data-theme="dark"] .alert.success {
-            background: rgba(27, 94, 32, 0.2);
-            color: #81c784;
+        .notification.warning {
+            background: linear-gradient(135deg, var(--warning), #ffb74d);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
         }
 
-        [data-theme="dark"] .alert.warning {
-            background: rgba(230, 81, 0, 0.2);
-            color: #ffb74d;
+        .likes-remaining {
+            font-size: 11px;
+            margin-top: 4px;
+            opacity: 0.9;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-emoji {
+            font-size: 48px;
+            margin-bottom: 12px;
         }
     </style>
 </head>
@@ -497,42 +521,63 @@
             <h1>💕 Dating</h1>
         </div>
 
+        <!-- Stats Bar (Hidden until profile created) -->
+        <div id="stats-section" style="display: none;">
+            <div class="stats-bar">
+                <div class="stat">
+                    <span class="stat-value" id="stat-likes">0</span>
+                    <span class="stat-label">❤️ Лайков</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="stat-matches">0</span>
+                    <span class="stat-label">💝 Совпадений</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="stat-streak">0</span>
+                    <span class="stat-label">🔥 Стрик</span>
+                </div>
+            </div>
+
+            <!-- Achievements -->
+            <div class="achievements" id="achievements"></div>
+        </div>
+
         <!-- Setup Profile Section -->
         <div id="setup-section" class="section active">
             <div class="profile-form">
-                <h2 style="text-align: center; margin-bottom: 20px;">Создай профиль</h2>
+                <h2 style="text-align: center; margin-bottom: 20px;">😍 Создай профиль</h2>
                 
                 <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
                     <img id="photoPreview" style="display: none;" />
-                    <div class="photo-upload-text" id="photoPlaceholder">
+                    <div id="photoPlaceholder" style="text-align: center;">
                         <div style="font-size: 32px; margin-bottom: 4px;">📸</div>
-                        <div>Загруз фото</div>
+                        <div style="font-size: 13px;">Загруж фото</div>
                     </div>
                 </div>
                 <input type="file" id="photoInput" accept="image/*" />
 
                 <div class="form-group">
-                    <label>Имя *</label>
+                    <label>✏️ Имя *</label>
                     <input type="text" id="setup-name" placeholder="Твоё имя" />
                 </div>
 
                 <div class="form-group">
-                    <label>Возраст *</label>
-                    <input type="number" id="setup-age" placeholder="Возраст" min="18" />
+                    <label>🎂 Возраст *</label>
+                    <input type="number" id="setup-age" placeholder="18+" min="18" />
                 </div>
 
                 <div class="form-group">
-                    <label>Город *</label>
+                    <label>📍 Город *</label>
                     <input type="text" id="setup-city" placeholder="Твой город" />
                 </div>
 
                 <div class="form-group">
-                    <label>О себе *</label>
-                    <textarea id="setup-bio" placeholder="Расскажи о себе"></textarea>
+                    <label>💬 О себе *</label>
+                    <textarea id="setup-bio" placeholder="Расскажи о себе, своих интересах, хобби..."></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label>Интересы (выбери несколько)</label>
+                    <label>🎯 Интересы (можно выбрать несколько)</label>
                     <div class="tags-container" id="setup-tags-container"></div>
                 </div>
 
@@ -542,29 +587,33 @@
 
         <!-- Discovery Section -->
         <div id="discovery-section" class="section">
-            <div id="like-alert"></div>
-            <div id="match-alert"></div>
+            <div id="notifications"></div>
             <div class="card-stack" id="card-stack"></div>
-            <div style="text-align: center; color: var(--text-secondary); font-size: 14px;" id="no-profiles">Загружаем профили...</div>
+            <div id="no-profiles" class="empty-state"></div>
         </div>
 
         <!-- Matches Section -->
         <div id="matches-section" class="section">
-            <div id="match-icebreaker" style="margin-bottom: 16px;"></div>
             <div class="matches-grid" id="matches-grid"></div>
-            <div id="no-matches" style="text-align: center; color: var(--text-secondary);">Совпадений нет 😔</div>
+            <div id="no-matches" class="empty-state" style="display: none;">
+                <div class="empty-state-emoji">😔</div>
+                <div>Совпадений нет</div>
+                <div style="font-size: 12px; margin-top: 8px;">Отправляй больше лайков!</div>
+            </div>
         </div>
 
-        <!-- Profile Edit Section -->
+        <!-- Profile Section -->
         <div id="profile-section" class="section">
             <div id="profile-view-container"></div>
-            <button class="btn btn-primary" onclick="editProfile()">✏️ Редактировать</button>
         </div>
     </div>
 
     <div class="navbar" id="navbar">
         <button class="nav-btn active" onclick="switchSection('discovery')">❤️</button>
-        <button class="nav-btn" onclick="switchSection('matches')">💬</button>
+        <button class="nav-btn" onclick="switchSection('matches')">
+            💬
+            <span class="nav-badge" id="match-badge" style="display: none;">0</span>
+        </button>
         <button class="nav-btn" onclick="switchSection('profile')">👤</button>
     </div>
 
@@ -572,8 +621,14 @@
         let userData = null;
         let allTags = [];
         let selectedTags = [];
-        let currentPhotoData = null;
-        let allProfiles = [];  // Store all profiles
+        let allProfiles = [];
+        let stats = { likes: 0, matches: 0, streak: 0 };
+        let achievements = {
+            firstLike: false,
+            firstMatch: false,
+            tenLikes: false,
+            tenMatches: false
+        };
         const API_BASE = window.location.origin + '/api';
         const tg = window.Telegram?.WebApp;
 
@@ -597,25 +652,73 @@
             }
         }
 
+        function showNotification(text, type = 'success') {
+            const container = document.getElementById('notifications');
+            const notif = document.createElement('div');
+            notif.className = `notification ${type}`;
+            notif.innerHTML = text;
+            container.appendChild(notif);
+            setTimeout(() => notif.remove(), 4000);
+        }
+
+        function checkAchievements() {
+            if (stats.likes >= 1 && !achievements.firstLike) {
+                achievements.firstLike = true;
+                showNotification('🏆 <strong>Достижение разблокировано!</strong><br>Первый лайк', 'success');
+                hapticFeedback('heavy');
+            }
+            if (stats.matches >= 1 && !achievements.firstMatch) {
+                achievements.firstMatch = true;
+                showNotification('🏆 <strong>Достижение разблокировано!</strong><br>Первое совпадение', 'success');
+                hapticFeedback('heavy');
+            }
+            if (stats.likes >= 10 && !achievements.tenLikes) {
+                achievements.tenLikes = true;
+                showNotification('🏆 <strong>Достижение разблокировано!</strong><br>10 лайков', 'success');
+                hapticFeedback('heavy');
+            }
+            if (stats.matches >= 10 && !achievements.tenMatches) {
+                achievements.tenMatches = true;
+                showNotification('🏆 <strong>Достижение разблокировано!</strong><br>10 совпадений', 'success');
+                hapticFeedback('heavy');
+            }
+        }
+
+        function renderAchievements() {
+            const container = document.getElementById('achievements');
+            const achievementsList = [
+                { key: 'firstLike', emoji: '❤️', name: 'Первый лайк' },
+                { key: 'firstMatch', emoji: '💝', name: 'Совпадение' },
+                { key: 'tenLikes', emoji: '🔥', name: '10 лайков' },
+                { key: 'tenMatches', emoji: '👑', name: '10 совпадений' }
+            ];
+            
+            container.innerHTML = achievementsList.map(ach => `
+                <div class="achievement ${achievements[ach.key] ? 'unlocked' : 'locked'}">
+                    <div class="achievement-badge">${ach.emoji}</div>
+                    <div class="achievement-name">${ach.name}</div>
+                </div>
+            `).join('');
+        }
+
         async function init() {
             if (!tg?.initDataUnsafe?.user) return;
             const user = tg.initDataUnsafe.user;
             userData = { id: user.id };
 
-            // Load tags
-            allTags = await fetch(`${API_BASE}/tags`).then(r => r.json());
+            allTags = await fetch(`${API_BASE}/tags`).then(r => r.json()).catch(() => []);
             renderSetupTags();
 
-            // Load user profile
             const existing = await fetch(`${API_BASE}/user/${user.id}`).then(r => r.ok ? r.json() : null);
-            if (existing && existing.name && existing.age && existing.city && existing.bio) {
-                // Profile exists - go to discovery
+            if (existing?.name && existing?.age && existing?.city && existing?.bio) {
                 userData = existing;
+                document.getElementById('setup-section').classList.remove('active');
+                document.getElementById('stats-section').style.display = 'block';
                 document.getElementById('navbar').classList.add('visible');
+                renderAchievements();
                 switchSection('discovery');
-            } else {
-                // No profile - show setup
-                document.getElementById('setup-section').classList.add('active');
+                loadProfiles();
+                loadMatches();
             }
         }
 
@@ -630,11 +733,9 @@
         }
 
         function toggleTag(tagId) {
-            if (selectedTags.includes(tagId)) {
-                selectedTags = selectedTags.filter(id => id !== tagId);
-            } else {
-                selectedTags.push(tagId);
-            }
+            selectedTags = selectedTags.includes(tagId) 
+                ? selectedTags.filter(id => id !== tagId)
+                : [...selectedTags, tagId];
             renderSetupTags();
         }
 
@@ -645,7 +746,7 @@
             const bio = document.getElementById('setup-bio').value;
 
             if (!name || !age || !city || !bio) {
-                alert('⚠️ Заполни все поля');
+                showNotification('⚠️ Заполни все поля!', 'warning');
                 return;
             }
 
@@ -656,67 +757,66 @@
             if (photoFile) {
                 const reader = new FileReader();
                 reader.onload = async (e) => {
-                    const photoData = e.target.result;
                     const uploadRes = await fetch(`${API_BASE}/upload-photo`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ user_id: userData.id, photo_data: photoData })
+                        body: JSON.stringify({ user_id: userData.id, photo_data: e.target.result })
                     }).then(r => r.json());
-                    photoUrl = uploadRes.photo_url;
-                    finalizeSaveProfile(name, age, city, bio, photoUrl);
+                    finalizeSaveProfile(name, age, city, bio, uploadRes.photo_url);
                 };
                 reader.readAsDataURL(photoFile);
             } else {
-                finalizeSaveProfile(name, age, city, bio, photoUrl);
+                finalizeSaveProfile(name, age, city, bio, null);
             }
         }
 
         async function finalizeSaveProfile(name, age, city, bio, photoUrl) {
-            const profile = {
-                id: userData.id,
-                name: name,
-                age: parseInt(age),
-                city: city,
-                bio: bio,
-                photo_url: photoUrl,
-                tag_ids: selectedTags
-            };
-
             await fetch(`${API_BASE}/user`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(profile)
+                body: JSON.stringify({
+                    id: userData.id,
+                    name, age: parseInt(age), city, bio,
+                    photo_url: photoUrl,
+                    tag_ids: selectedTags
+                })
             });
 
-            userData = profile;
+            userData = { id: userData.id, name, age: parseInt(age), city, bio, photo_url: photoUrl };
             hapticFeedback('medium');
+            showNotification('✅ Профиль создан! Начинай лайкать!', 'success');
             
-            // Show navbar and switch to discovery
-            document.getElementById('navbar').classList.add('visible');
             document.getElementById('setup-section').classList.remove('active');
+            document.getElementById('stats-section').style.display = 'block';
+            document.getElementById('navbar').classList.add('visible');
+            renderAchievements();
             switchSection('discovery');
             loadProfiles();
         }
 
         async function loadProfiles() {
-            const profiles = await fetch(`${API_BASE}/profiles/${userData.id}`).then(r => r.json());
-            allProfiles = profiles;  // Store all profiles
+            allProfiles = await fetch(`${API_BASE}/profiles/${userData.id}`).then(r => r.json()).catch(() => []);
             renderCards();
         }
 
         function renderCards() {
             const stack = document.getElementById('card-stack');
-            if (allProfiles.length === 0) {
-                document.getElementById('no-profiles').textContent = 'Больше профилей нет 😔';
+            const noProfiles = document.getElementById('no-profiles');
+            
+            if (!allProfiles.length) {
+                noProfiles.innerHTML = `
+                    <div class="empty-state-emoji">🎉</div>
+                    <div>Отлично!</div>
+                    <div style="font-size: 12px; margin-top: 8px;">Ты просмотрел всех. Заходи позже!</div>
+                `;
                 stack.innerHTML = '';
                 return;
             }
 
-            document.getElementById('no-profiles').style.display = 'none';
-            // Only show the first card
+            noProfiles.innerHTML = '';
             const profile = allProfiles[0];
             stack.innerHTML = `
-                <div class="card active" data-user-id="${profile.id}">
+                <div class="card" data-user-id="${profile.id}">
                     <div>
                         ${profile.photo_url ? `<img src="${profile.photo_url}" class="card-photo" />` : '<div class="card-photo"></div>'}
                         <div class="card-info">
@@ -724,12 +824,12 @@
                             <p>📍 ${profile.city}</p>
                             <p>${profile.bio}</p>
                             <div class="card-tags">
-                                ${(profile.tags || []).map(t => `<div class="card-tag">${t.emoji} ${t.name}</div>`).join('')}
+                                ${(profile.tags || []).map(t => `<span class="card-tag">${t.emoji} ${t.name}</span>`).join('')}
                             </div>
                         </div>
                     </div>
                     <div class="card-actions">
-                        <button class="action-btn dislike" onclick="handleSwipe(${profile.id}, false)">❌</button>
+                        <button class="action-btn dislike" onclick="handleSwipe(${profile.id}, false)">👋</button>
                         <button class="action-btn like" onclick="handleSwipe(${profile.id}, true)">❤️</button>
                     </div>
                 </div>
@@ -739,11 +839,7 @@
         async function handleSwipe(toUserId, isLike) {
             hapticFeedback('medium');
             const card = document.querySelector(`[data-user-id="${toUserId}"]`);
-            if (isLike) {
-                card.classList.add('swipe-right');
-            } else {
-                card.classList.add('swipe-left');
-            }
+            card.classList.add(isLike ? 'swipe-right' : 'swipe-left');
 
             const res = await fetch(`${API_BASE}/like`, {
                 method: 'POST',
@@ -752,79 +848,58 @@
             }).then(r => r.json());
 
             if (res.limit_reached) {
-                document.getElementById('like-alert').innerHTML = '<div class="alert warning">⚠️ Лимит лайков исчерпан (20 в день)!</div>';
+                showNotification('⚠️ Лимит лайков исчерпан (20/день)!<br><span class="likes-remaining">Приходи завтра 🌙</span>', 'warning');
                 hapticFeedback('heavy');
             }
 
             if (res.match) {
-                document.getElementById('match-alert').innerHTML = `<div class="alert success">🎉 Совпадение! ${res.icebreaker}</div>`;
+                stats.matches++;
+                stats.streak = Math.max(stats.streak, stats.likes + stats.matches);
+                showNotification(`🎉 Совпадение! ${res.icebreaker}`, 'success');
                 hapticFeedback('heavy');
             }
 
+            if (isLike) {
+                stats.likes++;
+            }
+
+            document.getElementById('stat-likes').textContent = stats.likes;
+            document.getElementById('stat-matches').textContent = stats.matches;
+            document.getElementById('stat-streak').textContent = stats.streak;
+            checkAchievements();
+
             setTimeout(() => {
-                // Remove swiped profile from the list
                 allProfiles = allProfiles.filter(p => p.id !== toUserId);
                 renderCards();
             }, 500);
         }
 
         async function loadMatches() {
-            const matches = await fetch(`${API_BASE}/matches/${userData.id}`).then(r => r.json());
+            const matches = await fetch(`${API_BASE}/matches/${userData.id}`).then(r => r.json()).catch(() => []);
             const grid = document.getElementById('matches-grid');
-            if (matches.length === 0) {
+            const noMatches = document.getElementById('no-matches');
+
+            if (!matches.length) {
                 grid.innerHTML = '';
-                document.getElementById('no-matches').style.display = 'block';
+                noMatches.style.display = 'block';
             } else {
-                document.getElementById('no-matches').style.display = 'none';
+                noMatches.style.display = 'none';
+                document.getElementById('match-badge').textContent = matches.length;
+                document.getElementById('match-badge').style.display = 'flex';
+                stats.matches = matches.length;
+                document.getElementById('stat-matches').textContent = matches.length;
+
                 grid.innerHTML = matches.map(match => `
                     <div class="match-item">
+                        <div class="match-status">💬 Новый</div>
                         ${match.photo_url ? `<img src="${match.photo_url}" class="match-photo" />` : '<div class="match-photo"></div>'}
                         <div class="match-info">
-                            <div class="match-name">${match.name}</div>
-                            <div class="match-tags">
-                                ${(match.common_tags || []).map(t => `<div class="match-tag">${t.emoji}</div>`).join('')}
-                            </div>
+                            <div class="match-name">${match.name}, ${match.age || 'N/A'}</div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">📍 ${match.city}</div>
                         </div>
                     </div>
                 `).join('');
             }
-        }
-
-        function showProfileView() {
-            const container = document.getElementById('profile-view-container');
-            container.innerHTML = `
-                <div class="profile-view">
-                    <div class="profile-header">
-                        ${userData.photo_url ? `<img src="${userData.photo_url}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;" />` : '<div class="profile-avatar">👤</div>'}
-                        <div class="profile-name">${userData.name}</div>
-                        <div class="profile-city">📍 ${userData.city}</div>
-                    </div>
-                    <div class="profile-stat">
-                        <span>Возраст</span>
-                        <span>${userData.age}</span>
-                    </div>
-                    <div class="profile-stat">
-                        <span>О себе</span>
-                        <span style="text-align: right;">${userData.bio}</span>
-                    </div>
-                    ${(userData.tags && userData.tags.length > 0) ? `
-                        <div class="profile-stat">
-                            <span>Интересы</span>
-                            <span>${userData.tags.map(t => t.emoji).join(' ')}</span>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-
-        function editProfile() {
-            document.getElementById('setup-name').value = userData.name;
-            document.getElementById('setup-age').value = userData.age;
-            document.getElementById('setup-city').value = userData.city;
-            document.getElementById('setup-bio').value = userData.bio;
-            selectedTags = (userData.tags || []).map(t => t.id);
-            renderSetupTags();
-            switchSection('setup');
         }
 
         function switchSection(section) {
@@ -844,6 +919,24 @@
                 document.querySelectorAll('.nav-btn')[2].classList.add('active');
                 showProfileView();
             }
+        }
+
+        function showProfileView() {
+            const container = document.getElementById('profile-view-container');
+            container.innerHTML = `
+                <div class="profile-form">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        ${userData.photo_url ? `<img src="${userData.photo_url}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; box-shadow: 0 4px 12px var(--shadow);" />` : ''}
+                        <h2>${userData.name}, ${userData.age}</h2>
+                        <p style="color: var(--text-secondary); margin: 4px 0 16px;">📍 ${userData.city}</p>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <h3>💬 О мне</h3>
+                        <p style="margin-top: 8px;">${userData.bio}</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="alert('✏️ Редактирование в разработке!')">✏️ Редактировать</button>
+                </div>
+            `;
         }
 
         document.getElementById('photoInput').addEventListener('change', (e) => {
