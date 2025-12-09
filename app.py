@@ -360,20 +360,20 @@ def get_likes(user_id):
 def get_chats(user_id):
     try:
         chats = execute_query('''
-            WITH partner AS (
-                SELECT CASE WHEN user1_id = %s THEN user2_id ELSE user1_id END as partner_id, created_at FROM chats
-                WHERE user1_id = %s OR user2_id = %s
-            )
             SELECT 
-                p.partner_id as user_id,
+                CASE WHEN user1_id = %s THEN user2_id ELSE user1_id END as user_id,
                 u.name as user_name,
                 u.photo_url as user_photo,
-                (SELECT text FROM messages WHERE (from_user = %s AND messages.to_user = p.partner_id) OR (from_user = p.partner_id AND messages.to_user = %s) ORDER BY created_at DESC LIMIT 1) as last_message,
-                p.created_at
-            FROM partner p
-            JOIN users u ON p.partner_id = u.id
-            ORDER BY p.created_at DESC
-        ''', (user_id, user_id, user_id, user_id, user_id), fetch_all=True)
+                (SELECT text FROM messages m 
+                 WHERE (m.from_user = %s AND m.to_user = CASE WHEN chats.user1_id = %s THEN chats.user2_id ELSE chats.user1_id END) 
+                 OR (m.from_user = CASE WHEN chats.user1_id = %s THEN chats.user2_id ELSE chats.user1_id END AND m.to_user = %s) 
+                 ORDER BY m.created_at DESC LIMIT 1) as last_message,
+                chats.created_at
+            FROM chats
+            JOIN users u ON (CASE WHEN user1_id = %s THEN user2_id ELSE user1_id END) = u.id
+            WHERE user1_id = %s OR user2_id = %s
+            ORDER BY chats.created_at DESC
+        ''', (user_id, user_id, user_id, user_id, user_id, user_id, user_id, user_id), fetch_all=True)
         return jsonify(chats or [])
     except Exception as e:
         print(f"Error: {e}")
