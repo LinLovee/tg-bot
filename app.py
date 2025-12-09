@@ -17,7 +17,7 @@ CORS(app)
 # Конфиг
 BOT_TOKEN = os.getenv('BOT_TOKEN', 'your_bot_token_here')
 DATABASE_URL = os.getenv('DATABASE_URL')
-PHOTO_DIR = '/tmp/photos'  # Render эфемерная папка, локально для теста
+PHOTO_DIR = '/tmp/photos'
 
 if not os.path.exists(PHOTO_DIR):
     os.makedirs(PHOTO_DIR, exist_ok=True)
@@ -34,7 +34,11 @@ def execute_query(query, params=(), fetch_one=False, fetch_all=False, commit=Fal
     try:
         with conn.cursor() as cur:
             pg_query = query.replace('?', '%s')
-            cur.execute(pg_query, params)
+            
+            if params:
+                cur.execute(pg_query, params)
+            else:
+                cur.execute(pg_query)
             
             result = None
             if fetch_one:
@@ -57,7 +61,7 @@ def init_db():
     conn = get_db_connection()
     try:
         with conn.cursor() as c:
-            # Пользователи (enhanced with photo, premium status, like limits)
+            # Пользователи
             c.execute('''
                 CREATE TABLE IF NOT EXISTS users (
                     id BIGINT PRIMARY KEY,
@@ -76,6 +80,27 @@ def init_db():
                 )
             ''')
             
+            # Add missing columns if they don't exist
+            try:
+                c.execute('ALTER TABLE users ADD COLUMN photo_url TEXT')
+            except:
+                pass
+            
+            try:
+                c.execute('ALTER TABLE users ADD COLUMN is_premium BOOLEAN DEFAULT FALSE')
+            except:
+                pass
+            
+            try:
+                c.execute('ALTER TABLE users ADD COLUMN daily_likes_used INTEGER DEFAULT 0')
+            except:
+                pass
+            
+            try:
+                c.execute('ALTER TABLE users ADD COLUMN last_like_reset TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+            except:
+                pass
+            
             # Лайки
             c.execute('''
                 CREATE TABLE IF NOT EXISTS likes (
@@ -89,7 +114,7 @@ def init_db():
                 )
             ''')
             
-            # Чаты (with last_message_at for expiring matches)
+            # Чаты
             c.execute('''
                 CREATE TABLE IF NOT EXISTS chats (
                     id SERIAL PRIMARY KEY,
@@ -102,6 +127,12 @@ def init_db():
                     FOREIGN KEY(user2_id) REFERENCES users(id)
                 )
             ''')
+            
+            # Add missing column in chats
+            try:
+                c.execute('ALTER TABLE chats ADD COLUMN last_message_at TIMESTAMP')
+            except:
+                pass
             
             # Сообщения
             c.execute('''
@@ -125,9 +156,10 @@ def init_db():
                 )
             ''')
             
-            # Вставка тегов, если ещё нет
+            # Вставка тегов
             c.execute('SELECT COUNT(*) as cnt FROM tags')
-            if c.fetchone()['cnt'] == 0:
+            result = c.fetchone()
+            if result and result['cnt'] == 0:
                 tags_data = [
                     ('Sport', '⚽'),
                     ('Crypto', '🢰'),
@@ -143,7 +175,7 @@ def init_db():
                     ('Fashion', '👗')
                 ]
                 for name, emoji in tags_data:
-                    c.execute('INSERT INTO tags (name, emoji) VALUES (?, ?)', (name, emoji))
+                    c.execute('INSERT INTO tags (name, emoji) VALUES (%s, %s)', (name, emoji))
             
             # User-tags mapping
             c.execute('''
@@ -157,9 +189,10 @@ def init_db():
             ''')
             
             conn.commit()
-            print("Database initialized successfully with new features!")
+            print("Database initialized successfully with all features!")
     except Exception as e:
         print(f"Init DB error: {e}")
+        conn.rollback()
     finally:
         conn.close()
 
@@ -176,18 +209,20 @@ except Exception as e:
 
 def reset_daily_likes(user_id):
     """Reset daily like counter if 24h passed"""
-    user = execute_query('SELECT last_like_reset FROM users WHERE id = ?', (user_id,), fetch_one=True)
-    if user and user['last_like_reset']:
-        time_since_reset = (datetime.now(user['last_like_reset'].tzinfo or None) - user['last_like_reset']).total_seconds()
-        if time_since_reset > 86400:  # 24 hours
-            execute_query('UPDATE users SET daily_likes_used = 0, last_like_reset = CURRENT_TIMESTAMP WHERE id = ?', (user_id,), commit=True)
-            return True
+    try:
+        user = execute_query('SELECT last_like_reset FROM users WHERE id = ?', (user_id,), fetch_one=True)
+        if user and user['last_like_reset']:
+            time_since_reset = (datetime.now(user['last_like_reset'].tzinfo or None) - user['last_like_reset']).total_seconds()
+            if time_since_reset > 86400:  # 24 hours
+                execute_query('UPDATE users SET daily_likes_used = 0, last_like_reset = CURRENT_TIMESTAMP WHERE id = ?', (user_id,), commit=True)
+                return True
+    except Exception as e:
+        print(f"Error resetting likes: {e}")
     return False
 
 def delete_expired_chats():
     """Delete chats with no messages for 24 hours"""
     try:
-        # Find and delete expired chats
         execute_query('''
             DELETE FROM messages WHERE chat_id IN (
                 SELECT id FROM chats WHERE last_message_at IS NULL 
@@ -204,45 +239,42 @@ def delete_expired_chats():
 
 def get_ai_icebreaker(user1_id, user2_id):
     """Generate AI icebreaker based on common interests"""
-    # Get user1 tags
-    user1_tags = execute_query('''
-        SELECT t.name FROM user_tags ut
-        JOIN tags t ON ut.tag_id = t.id
-        WHERE ut.user_id = ?
-    ''', (user1_id,), fetch_all=True)
-    
-    user1_tag_names = [t['name'] for t in user1_tags]
-    
-    # Get user2 tags
-    user2_tags = execute_query('''
-        SELECT t.name, t.emoji FROM user_tags ut
-        JOIN tags t ON ut.tag_id = t.id
-        WHERE ut.user_id = ?
-    ''', (user2_id,), fetch_all=True)
-    
-    # Find common tags
-    common_tags = [t for t in user2_tags if t['name'] in user1_tag_names]
-    
-    if common_tags:
-        tag = common_tags[0]
-        icebreakers = {
-            'Sport': f'Wow, you both love sports! {tag["emoji"]} What\'s your favorite team?',
-            'Crypto': f'Crypto enthusiasts! {tag["emoji"]} What\'s your favorite coin?',
-            'Travel': f'You both love traveling! {tag["emoji"]} What was your last trip?',
-            'Music': f'Music lovers! {tag["emoji"]} What\'s your favorite artist?',
-            'Dogs': f'You both have dogs! {tag["emoji"]} Tell about yours!',
-            'Fitness': f'Fitness buddies! {tag["emoji"]} What\'s your workout routine?',
-            'Food': f'Foodies! {tag["emoji"]} What\'s your favorite cuisine?',
-        }
-        return icebreakers.get(tag['name'], f'You both love {tag["name"]}! {tag["emoji"]}')
+    try:
+        # Get user1 tags
+        user1_tags = execute_query('''
+            SELECT t.name FROM user_tags ut
+            JOIN tags t ON ut.tag_id = t.id
+            WHERE ut.user_id = ?
+        ''', (user1_id,), fetch_all=True)
+        
+        user1_tag_names = [t['name'] for t in user1_tags]
+        
+        # Get user2 tags
+        user2_tags = execute_query('''
+            SELECT t.name, t.emoji FROM user_tags ut
+            JOIN tags t ON ut.tag_id = t.id
+            WHERE ut.user_id = ?
+        ''', (user2_id,), fetch_all=True)
+        
+        # Find common tags
+        common_tags = [t for t in user2_tags if t['name'] in user1_tag_names]
+        
+        if common_tags:
+            tag = common_tags[0]
+            icebreakers = {
+                'Sport': f"Wow, you both love sports! {tag['emoji']} What's your favorite team?",
+                'Crypto': f"Crypto enthusiasts! {tag['emoji']} What's your favorite coin?",
+                'Travel': f"You both love traveling! {tag['emoji']} What was your last trip?",
+                'Music': f"Music lovers! {tag['emoji']} What's your favorite artist?",
+                'Dogs': f"You both have dogs! {tag['emoji']} Tell about yours!",
+                'Fitness': f"Fitness buddies! {tag['emoji']} What's your workout routine?",
+                'Food': f"Foodies! {tag['emoji']} What's your favorite cuisine?",
+            }
+            return icebreakers.get(tag['name'], f"You both love {tag['name']}! {tag['emoji']}")
+    except Exception as e:
+        print(f"Error generating icebreaker: {e}")
     
     return 'Say hi and break the ice!'
-
-def check_premium_status(user_id):
-    """Check if user has Telegram Premium (basic check)"""
-    # In production, integrate with Telegram Bot API
-    # For now, returning placeholder
-    return False
 
 # ======================== VALIDATION ========================
 
@@ -471,7 +503,6 @@ def upload_photo():
         photo_base64 = data['photo_data']
         
         # Save to /tmp or return URL
-        # For production, use Cloudinary/AWS S3
         photo_filename = f'{user_id}_profile.jpg'
         photo_path = os.path.join(PHOTO_DIR, photo_filename)
         
@@ -505,7 +536,15 @@ def get_photo(user_id):
 def health():
     return jsonify({'status': 'ok', 'timestamp': datetime.now().isoformat()})
 
-# ======================== ERROR HANDLERS ========================
+# ======================== STATIC & ERROR HANDLERS ========================
+
+@app.route('/')
+def index():
+    return send_file('index.html')
+
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_file(filename)
 
 @app.errorhandler(404)
 def not_found(e):
