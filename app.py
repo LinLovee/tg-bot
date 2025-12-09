@@ -84,6 +84,13 @@ def init_db():
     conn.commit()
     conn.close()
 
+# Инициализируем БД сразу при старте приложения
+try:
+    init_db()
+    print("Database initialized successfully")
+except Exception as e:
+    print(f"Error initializing database: {e}")
+
 # ======================== STATIC ROUTES ========================
 
 @app.route('/')
@@ -306,6 +313,6 @@ def server_error(e):
 # ======================== MAIN ========================
 
 if __name__ == '__main__':
-    init_db()
+    # init_db() уже вызывается выше
     port = int(os.getenv('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
