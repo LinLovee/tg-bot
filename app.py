@@ -114,8 +114,8 @@ def init_db():
                         to_user BIGINT,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         UNIQUE(from_user, to_user),
-                        FOREIGN KEY(from_user) REFERENCES users(id),
-                        FOREIGN KEY(to_user) REFERENCES users(id)
+                        FOREIGN KEY(from_user) REFERENCES users(id) ON DELETE CASCADE,
+                        FOREIGN KEY(to_user) REFERENCES users(id) ON DELETE CASCADE
                     )
                 ''')
                 conn.commit()
@@ -130,8 +130,8 @@ def init_db():
                         user2_id BIGINT,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         UNIQUE(user1_id, user2_id),
-                        FOREIGN KEY(user1_id) REFERENCES users(id),
-                        FOREIGN KEY(user2_id) REFERENCES users(id)
+                        FOREIGN KEY(user1_id) REFERENCES users(id) ON DELETE CASCADE,
+                        FOREIGN KEY(user2_id) REFERENCES users(id) ON DELETE CASCADE
                     )
                 ''')
                 conn.commit()
@@ -146,7 +146,7 @@ def init_db():
                         text TEXT,
                         chat_id INTEGER,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY(chat_id) REFERENCES chats(id)
+                        FOREIGN KEY(chat_id) REFERENCES chats(id) ON DELETE CASCADE
                     )
                 ''')
                 conn.commit()
@@ -198,8 +198,8 @@ def init_db():
                         user_id BIGINT,
                         tag_id INTEGER,
                         PRIMARY KEY (user_id, tag_id),
-                        FOREIGN KEY(user_id) REFERENCES users(id),
-                        FOREIGN KEY(tag_id) REFERENCES tags(id)
+                        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+                        FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
                     )
                 ''')
                 conn.commit()
@@ -272,6 +272,22 @@ def create_user():
         
         return jsonify({'success': True})
     except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/user/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    try:
+        # CASCADE will automatically delete chats, messages, likes, user_tags
+        execute_query('DELETE FROM users WHERE id = ?', (user_id,), commit=True)
+        
+        # Delete photo file
+        photo_path = os.path.join(PHOTO_DIR, f'{user_id}_profile.jpg')
+        if os.path.exists(photo_path):
+            os.remove(photo_path)
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Delete user error: {e}")
         return jsonify({'error': str(e)}), 400
 
 @app.route('/api/profiles/<int:user_id>', methods=['GET'])
