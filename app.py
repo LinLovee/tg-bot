@@ -20,7 +20,7 @@ logging.getLogger('psycopg').setLevel(logging.WARNING)
 
 BOT_TOKEN = os.getenv('BOT_TOKEN', 'your_bot_token_here')
 DATABASE_URL = os.getenv('DATABASE_URL')
-PHOTO_DIR = '/tmp/photos'
+PHOTO_DIR = 'photos'
 
 if not os.path.exists(PHOTO_DIR):
     os.makedirs(PHOTO_DIR, exist_ok=True)
@@ -337,11 +337,12 @@ def like_profile():
         if mutual and not data.get('dislike'):
             u1, u2 = sorted([data['from_user'], data['to_user']])
             execute_query('INSERT INTO chats (user1_id, user2_id) VALUES (?, ?) ON CONFLICT DO NOTHING', (u1, u2), commit=True)
-            return jsonify({'match': True})
+            return jsonify({'match': True, 'chat_created': True})
         
-        return jsonify({'match': False})
+        return jsonify({'match': False, 'chat_created': False})
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        print(f"Like error: {e}")
+        return jsonify({'error': str(e), 'match': False}), 400
 
 @app.route('/api/likes/<int:user_id>', methods=['GET'])
 def get_likes(user_id):
@@ -424,6 +425,7 @@ def upload_photo():
         execute_query('UPDATE users SET photo_url = ? WHERE id = ?', (photo_url, user_id), commit=True)
         return jsonify({'success': True, 'photo_url': photo_url})
     except Exception as e:
+        print(f"Photo upload error: {e}")
         return jsonify({'error': str(e)}), 400
 
 @app.route('/api/photo/<int:user_id>', methods=['GET'])
