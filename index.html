@@ -6,593 +6,114 @@
     <title>💕 Dating App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --bg: #ffffff;
-            --bg-secondary: #f5f5f7;
-            --text: #000000;
-            --text-secondary: #666666;
-            --border: #e5e5e7;
-            --accent: #ff5a5f;
-            --success: #34c759;
-            --warning: #ff9500;
-            --shadow: rgba(0, 0, 0, 0.1);
+            --bg: #ffffff; --bg-secondary: #f5f5f7; --text: #000000; --text-secondary: #666666;
+            --border: #e5e5e7; --accent: #ff5a5f; --success: #34c759; --warning: #ff9500; --shadow: rgba(0, 0, 0, 0.1);
         }
-
         [data-theme="dark"] {
-            --bg: #1a1a1a;
-            --bg-secondary: #2a2a2a;
-            --text: #ffffff;
-            --text-secondary: #999999;
-            --border: #333333;
-            --shadow: rgba(255, 255, 255, 0.1);
+            --bg: #1a1a1a; --bg-secondary: #2a2a2a; --text: #ffffff; --text-secondary: #999999;
+            --border: #333333; --shadow: rgba(255, 255, 255, 0.1);
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            transition: background 0.3s, color 0.3s;
-            padding-bottom: 120px;
-        }
-
-        .container {
-            max-width: 420px;
-            margin: 0 auto;
-            padding: 16px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            padding-top: 12px;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 8px;
-        }
-
-        .discovery-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .discovery-header h2 {
-            font-size: 24px;
-            margin: 0;
-        }
-
-        .filter-toggle-btn {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 8px 12px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: var(--text);
-        }
-
-        .filter-toggle-btn:active {
-            transform: scale(0.95);
-        }
-
-        .filter-toggle-btn.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
-        .filters {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .filters.visible {
-            display: block;
-        }
-
-        .filter-group {
-            margin-bottom: 16px;
-        }
-
-        .filter-group label {
-            display: block;
-            font-weight: 600;
-            font-size: 13px;
-            margin-bottom: 8px;
-            color: var(--text-secondary);
-        }
-
-        .filter-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg);
-            color: var(--text);
-            font-size: 14px;
-        }
-
-        .age-range {
-            display: flex;
-            gap: 8px;
-        }
-
-        .age-range input {
-            flex: 1;
-        }
-
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            display: none;
-            justify-content: space-around;
-            background: var(--bg-secondary);
-            border-top: 1px solid var(--border);
-            padding-bottom: max(10px, env(safe-area-inset-bottom));
-            z-index: 100;
-            backdrop-filter: blur(10px);
-        }
-
-        .navbar.visible {
-            display: flex;
-        }
-
-        .nav-btn {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 24px;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .nav-btn.active {
-            color: var(--accent);
-            transform: scale(1.1);
-        }
-
-        .nav-badge {
-            position: absolute;
-            top: 4px;
-            right: 8px;
-            background: var(--warning);
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        .section {
-            display: none;
-            animation: fadeIn 0.3s;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .profile-form {
-            background: var(--bg-secondary);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .form-group input, .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            background: var(--bg);
-            color: var(--text);
-            font-family: inherit;
-            font-size: 16px;
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .photo-upload {
-            position: relative;
-            width: 150px;
-            height: 150px;
-            margin: 0 auto 20px;
-            border: 2px dashed var(--border);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            background: var(--bg);
-            transition: all 0.3s;
-        }
-
-        .photo-upload:hover {
-            border-color: var(--accent);
-            background: var(--bg-secondary);
-        }
-
-        .photo-upload img {
-            max-width: 100%;
-            max-height: 100%;
-            border-radius: 14px;
-            object-fit: cover;
-        }
-
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); transition: background 0.3s, color 0.3s; padding-bottom: 120px; }
+        .container { max-width: 420px; margin: 0 auto; padding: 16px; }
+        .header { text-align: center; margin-bottom: 20px; padding-top: 12px; }
+        .header h1 { font-size: 28px; margin-bottom: 8px; }
+        .discovery-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .discovery-header h2 { font-size: 24px; margin: 0; }
+        .filter-toggle-btn { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 16px; cursor: pointer; transition: all 0.2s; color: var(--text); }
+        .filter-toggle-btn:active { transform: scale(0.95); }
+        .filter-toggle-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+        .filters { background: var(--bg-secondary); border-radius: 16px; padding: 16px; margin-bottom: 20px; display: none; }
+        .filters.visible { display: block; }
+        .filter-group { margin-bottom: 16px; }
+        .filter-group label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 8px; color: var(--text-secondary); }
+        .filter-group input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 14px; }
+        .age-range { display: flex; gap: 8px; }
+        .age-range input { flex: 1; }
+        .navbar { position: fixed; bottom: 0; left: 0; right: 0; display: none; justify-content: space-around; background: var(--bg-secondary); border-top: 1px solid var(--border); padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; backdrop-filter: blur(10px); }
+        .navbar.visible { display: flex; }
+        .nav-btn { flex: 1; padding: 12px; text-align: center; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 24px; transition: all 0.2s; position: relative; }
+        .nav-btn.active { color: var(--accent); transform: scale(1.1); }
+        .nav-badge { position: absolute; top: 4px; right: 8px; background: var(--warning); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+        .section { display: none; animation: fadeIn 0.3s; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .profile-form { background: var(--bg-secondary); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); font-family: inherit; font-size: 16px; }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .photo-upload { position: relative; width: 150px; height: 150px; margin: 0 auto 20px; border: 2px dashed var(--border); border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: var(--bg); transition: all 0.3s; }
+        .photo-upload:hover { border-color: var(--accent); background: var(--bg-secondary); }
+        .photo-upload img { max-width: 100%; max-height: 100%; border-radius: 14px; object-fit: cover; }
         .photo-upload input[type="file"] { display: none; }
-
-        .tags-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .tag {
-            padding: 8px 12px;
-            border: 2px solid var(--border);
-            border-radius: 20px;
-            background: var(--bg);
-            color: var(--text);
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 13px;
-        }
-
-        .tag.selected {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent), #ff8a80);
-            color: white;
-            box-shadow: 0 4px 12px rgba(255, 90, 95, 0.3);
-        }
-
-        .btn-primary:active {
-            transform: scale(0.98);
-        }
-
-        .card-stack {
-            position: relative;
-            width: 100%;
-            height: 520px;
-            margin-bottom: 20px;
-        }
-
-        .card {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-secondary);
-            border-radius: 20px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            box-shadow: 0 10px 30px var(--shadow);
-            cursor: grab;
-            user-select: none;
-            overflow: hidden;
-        }
-
+        .tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .tag { padding: 8px 12px; border: 2px solid var(--border); border-radius: 20px; background: var(--bg); color: var(--text); cursor: pointer; transition: all 0.2s; font-size: 13px; }
+        .tag.selected { background: var(--accent); color: white; border-color: var(--accent); }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent), #ff8a80); color: white; box-shadow: 0 4px 12px rgba(255, 90, 95, 0.3); }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-secondary { background: var(--bg-secondary); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:active { transform: scale(0.98); }
+        .card-stack { position: relative; width: 100%; height: 520px; margin-bottom: 20px; }
+        .card { position: absolute; width: 100%; height: 100%; background: var(--bg-secondary); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 30px var(--shadow); cursor: grab; user-select: none; overflow: hidden; }
         .card.swipe-right { animation: swipeRight 0.5s forwards; }
         .card.swipe-left { animation: swipeLeft 0.5s forwards; }
-
         @keyframes swipeRight { to { transform: translateX(400px) rotate(20deg); opacity: 0; } }
         @keyframes swipeLeft { to { transform: translateX(-400px) rotate(-20deg); opacity: 0; } }
-
-        .card-photo {
-            width: 100%;
-            height: 270px;
-            background: var(--border);
-            border-radius: 16px;
-            object-fit: cover;
-            margin-bottom: 16px;
-        }
-
-        .card-info h2 {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 6px;
-        }
-
-        .card-info p {
-            color: var(--text-secondary);
-            font-size: 14px;
-            margin-bottom: 12px;
-            line-height: 1.4;
-        }
-
-        .card-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 12px;
-        }
-
-        .card-tag {
-            background: var(--accent);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .card-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-        }
-
-        .action-btn {
-            width: 70px;
-            height: 70px;
-            border: none;
-            border-radius: 50%;
-            font-size: 32px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 600;
-            box-shadow: 0 4px 12px var(--shadow);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .action-btn.like {
-            background: linear-gradient(135deg, var(--success), #81c784);
-            color: white;
-        }
-
-        .action-btn.dislike {
-            background: #ff6b6b;
-            color: white;
-        }
-
-        .action-btn:active {
-            transform: scale(0.9);
-        }
-
-        .likes-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .like-item {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-            box-shadow: 0 4px 12px var(--shadow);
-        }
-
+        .card-photo { width: 100%; height: 270px; background: var(--border); border-radius: 16px; object-fit: cover; margin-bottom: 16px; }
+        .card-info h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+        .card-info p { color: var(--text-secondary); font-size: 14px; margin-bottom: 12px; line-height: 1.4; }
+        .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+        .card-tag { background: var(--accent); color: white; padding: 5px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+        .card-actions { display: flex; gap: 12px; justify-content: center; }
+        .action-btn { width: 70px; height: 70px; border: none; border-radius: 50%; font-size: 32px; cursor: pointer; transition: all 0.2s; font-weight: 600; box-shadow: 0 4px 12px var(--shadow); display: flex; align-items: center; justify-content: center; }
+        .action-btn.like { background: linear-gradient(135deg, var(--success), #81c784); color: white; }
+        .action-btn.dislike { background: #ff6b6b; color: white; }
+        .action-btn:active { transform: scale(0.9); }
+        .likes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .like-item { background: var(--bg-secondary); border-radius: 16px; overflow: hidden; cursor: pointer; transition: all 0.2s; position: relative; box-shadow: 0 4px 12px var(--shadow); }
         .like-item:active { transform: scale(0.95); }
-        .like-badge {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: var(--accent);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 600;
-            z-index: 10;
-        }
-        .like-photo {
-            width: 100%;
-            height: 200px;
-            background: var(--border);
-            object-fit: cover;
-        }
-        .like-info {
-            padding: 12px;
-        }
-        .like-name {
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 4px;
-        }
-
-        .chat-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-        .chat-item {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+        .like-badge { position: absolute; top: 8px; right: 8px; background: var(--accent); color: white; padding: 4px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; z-index: 10; }
+        .like-photo { width: 100%; height: 200px; background: var(--border); object-fit: cover; }
+        .like-info { padding: 12px; }
+        .like-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+        .profile-viewer { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); display: none; z-index: 200; overflow-y: auto; padding-bottom: 60px; }
+        .profile-viewer.active { display: block; }
+        .profile-viewer-header { background: var(--bg-secondary); padding: 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 201; display: flex; justify-content: space-between; align-items: center; }
+        .profile-back-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text); }
+        .profile-viewer-content { max-width: 420px; margin: 0 auto; padding: 16px; }
+        .profile-large-photo { width: 100%; height: 300px; background: var(--border); border-radius: 16px; object-fit: cover; margin-bottom: 16px; }
+        .profile-viewer-info { background: var(--bg-secondary); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+        .profile-viewer-info h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .profile-viewer-info p { color: var(--text-secondary); font-size: 14px; margin-bottom: 8px; line-height: 1.5; }
+        .message-button { width: 100%; }
+        .chat-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        .chat-item { background: var(--bg-secondary); border-radius: 12px; padding: 12px; cursor: pointer; transition: all 0.2s; }
         .chat-item:active { background: var(--border); }
-        .chat-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 8px;
-        }
-        .chat-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--accent);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 18px;
-        }
+        .chat-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+        .chat-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 18px; }
         .chat-info { flex: 1; }
-        .chat-name {
-            font-weight: 600;
-            font-size: 14px;
-        }
-        .chat-preview {
-            font-size: 12px;
-            color: var(--text-secondary);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .chat-header-bar {
-            background: var(--bg-secondary);
-            padding: 12px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-        .chat-back-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--text);
-        }
-        .messages-list {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding: 8px 0;
-        }
-        .message {
-            padding: 12px 16px;
-            border-radius: 16px;
-            max-width: 85%;
-            word-wrap: break-word;
-        }
-        .message.own {
-            align-self: flex-end;
-            background: var(--accent);
-            color: white;
-        }
-        .message.other {
-            align-self: flex-start;
-            background: var(--bg-secondary);
-            color: var(--text);
-        }
-        .message-time {
-            font-size: 11px;
-            opacity: 0.7;
-            margin-top: 4px;
-        }
-        .message-input {
-            display: flex;
-            gap: 8px;
-            background: var(--bg-secondary);
-            padding: 12px;
-            border-radius: 12px;
-            margin-top: 12px;
-        }
-        .message-input input {
-            flex: 1;
-            border: none;
-            background: var(--bg);
-            color: var(--text);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .message-send-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            width: 44px;
-            height: 44px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-secondary);
-        }
-        .empty-state-emoji {
-            font-size: 48px;
-            margin-bottom: 12px;
-        }
+        .chat-name { font-weight: 600; font-size: 14px; }
+        .chat-preview { font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .chat-header-bar { background: var(--bg-secondary); padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .chat-back-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text); }
+        .messages-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 8px 0; }
+        .message { padding: 12px 16px; border-radius: 16px; max-width: 85%; word-wrap: break-word; }
+        .message.own { align-self: flex-end; background: var(--accent); color: white; }
+        .message.other { align-self: flex-start; background: var(--bg-secondary); color: var(--text); }
+        .message-time { font-size: 11px; opacity: 0.7; margin-top: 4px; }
+        .message-input { display: flex; gap: 8px; background: var(--bg-secondary); padding: 12px; border-radius: 12px; margin-top: 12px; }
+        .message-input input { flex: 1; border: none; background: var(--bg); color: var(--text); padding: 10px; border-radius: 8px; font-size: 14px; }
+        .message-send-btn { background: var(--accent); color: white; border: none; border-radius: 8px; width: 44px; height: 44px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
+        .empty-state-emoji { font-size: 48px; margin-bottom: 12px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>💕 Dating</h1>
-        </div>
-
-        <!-- Setup Profile -->
+        <div class="header"><h1>💕 Dating</h1></div>
         <div id="setup-section" class="section active">
             <div class="profile-form">
                 <h2 style="text-align: center; margin-bottom: 20px;">😍 Создай профиль</h2>
@@ -609,8 +130,6 @@
                 <button class="btn btn-primary" onclick="saveProfile()">✅ Создать</button>
             </div>
         </div>
-
-        <!-- Discovery -->
         <div id="discovery-section" class="section">
             <div class="discovery-header"><h2>😋 Анкеты</h2><button id="filter-btn" class="filter-toggle-btn" onclick="toggleFilters()">🔍</button></div>
             <div class="filters" id="filters-panel">
@@ -620,23 +139,31 @@
             <div class="card-stack" id="card-stack"></div>
             <div id="no-profiles" class="empty-state"></div>
         </div>
-
-        <!-- Likes -->
         <div id="likes-section" class="section">
             <div class="likes-grid" id="likes-grid"></div>
             <div id="no-likes" class="empty-state" style="display: none;"><div class="empty-state-emoji">😔</div><div>Кто-то тебя лайкнул</div><div style="font-size: 12px; margin-top: 8px;">Ответь лайком и напиши ему!</div></div>
         </div>
-
-        <!-- Messages -->
         <div id="messages-section" class="section">
             <div id="chat-list-view"><div class="chat-list" id="chat-list"></div><div id="no-chats" class="empty-state" style="display: none;"><div class="empty-state-emoji">📬</div><div>Нет переписки</div></div></div>
             <div id="chat-detail-view" style="display: none;"><div class="chat-header-bar"><button class="chat-back-btn" onclick="backToChats()">← Назад</button><div id="chat-user-info"></div></div><div class="messages-list" id="messages-list"></div><div class="message-input"><input type="text" id="message-input" placeholder="Написать..." /><button class="message-send-btn" onclick="sendMessage()">✈️</button></div></div>
         </div>
-
-        <!-- Profile -->
         <div id="profile-section" class="section"><div id="profile-view-container"></div></div>
     </div>
-
+    <div class="profile-viewer" id="profile-viewer">
+        <div class="profile-viewer-header">
+            <button class="profile-back-btn" onclick="closeProfileViewer()">←</button>
+            <span></span>
+        </div>
+        <div class="profile-viewer-content">
+            <img id="profile-viewer-photo" class="profile-large-photo" />
+            <div class="profile-viewer-info">
+                <h2 id="profile-viewer-name"></h2>
+                <p id="profile-viewer-location"></p>
+                <p id="profile-viewer-bio"></p>
+            </div>
+            <button class="btn btn-primary message-button" id="message-button" onclick="sendMessageToProfile()">💬 Написать сообщение</button>
+        </div>
+    </div>
     <div class="navbar" id="navbar">
         <button class="nav-btn active" onclick="switchSection('discovery')">❤️</button>
         <button class="nav-btn" onclick="switchSection('likes')">👋<span class="nav-badge" id="likes-badge" style="display: none;">0</span></button>
@@ -645,7 +172,7 @@
     </div>
 
     <script>
-        let userData = null, allTags = [], selectedTags = [], allProfiles = [], allLikes = [], currentChat = null;
+        let userData = null, allTags = [], selectedTags = [], allProfiles = [], allLikes = [], currentChat = null, viewingProfile = null;
         let filters = { ageMin: 18, ageMax: 99, city: '' }, filtersVisible = false;
         const API_BASE = window.location.origin + '/api';
         const tg = window.Telegram?.WebApp;
@@ -728,8 +255,7 @@
         }
 
         function renderCards() {
-            const stack = document.getElementById('card-stack');
-            const noProfiles = document.getElementById('no-profiles');
+            const stack = document.getElementById('card-stack'), noProfiles = document.getElementById('no-profiles');
             if (!allProfiles.length) {
                 noProfiles.innerHTML = `<div class="empty-state-emoji">🌟</div><div>Профилей не найдено</div><div style="font-size: 12px; margin-top: 8px;">Ты просмотрел всех. Попробуй изменить фильтры!</div>`;
                 stack.innerHTML = '';
@@ -768,30 +294,40 @@
                 noLikes.style.display = 'none';
                 document.getElementById('likes-badge').textContent = allLikes.length;
                 document.getElementById('likes-badge').style.display = 'flex';
-                grid.innerHTML = allLikes.map(like => `<div class="like-item" onclick="handleLikedProfile(${like.id})"><div class="like-badge">❤️</div>${like.photo_url ? `<img src="${like.photo_url}" class="like-photo" />` : '<div class="like-photo"></div>'}<div class="like-info"><div class="like-name">${like.name}, ${like.age}</div><div style="font-size: 12px; color: var(--text-secondary);">📍 ${like.city}</div></div></div>`).join('');
+                grid.innerHTML = allLikes.map(like => `<div class="like-item" onclick="viewProfile(${like.id}, '${like.name}', ${like.age}, '${like.city}', '${like.photo_url || ''}')"><div class="like-badge">❤️</div>${like.photo_url ? `<img src="${like.photo_url}" class="like-photo" />` : '<div class="like-photo"></div>'}<div class="like-info"><div class="like-name">${like.name}, ${like.age}</div><div style="font-size: 12px; color: var(--text-secondary);">📍 ${like.city}</div></div></div>`).join('');
             }
         }
 
-        async function handleLikedProfile(likedUserId) {
+        function viewProfile(userId, name, age, city, photo) {
+            viewingProfile = { userId, name, age, city, photo };
+            document.getElementById('profile-viewer-name').textContent = `${name}, ${age}`;
+            document.getElementById('profile-viewer-location').textContent = `📍 ${city}`;
+            document.getElementById('profile-viewer-bio').textContent = 'Открываю профиль...';
+            if (photo) document.getElementById('profile-viewer-photo').src = photo;
+            document.getElementById('profile-viewer').classList.add('active');
+        }
+
+        function closeProfileViewer() {
+            document.getElementById('profile-viewer').classList.remove('active');
+            viewingProfile = null;
+        }
+
+        async function sendMessageToProfile() {
+            if (!viewingProfile) return;
             hapticFeedback('light');
-            const action = confirm(`👋 ${allLikes.find(l => l.id === likedUserId)?.name}\n\nНажми OK если понравился, Отмена чтобы скрыть`);
-            if (action) {
-                const res = await fetch(`${API_BASE}/like`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ from_user: userData.id, to_user: likedUserId })
-                }).then(r => r.json());
-                if (res.match) { hapticFeedback('heavy'); alert('🎉 Матч! Пиши ему первым!'); loadChats(); }
-            } else {
-                await fetch(`${API_BASE}/like`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ from_user: userData.id, to_user: likedUserId, dislike: true })
-                }).then(r => r.json());
-                hapticFeedback('light');
-            }
-            allLikes = allLikes.filter(l => l.id !== likedUserId);
-            renderLikes();
+            
+            u1 = Math.min(userData.id, viewingProfile.userId);
+            u2 = Math.max(userData.id, viewingProfile.userId);
+            await fetch(`${API_BASE}/like`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ from_user: userData.id, to_user: viewingProfile.userId })
+            }).then(r => r.json());
+            
+            closeProfileViewer();
+            loadChats();
+            switchSection('messages');
+            openChat(viewingProfile.userId, viewingProfile.name, viewingProfile.photo);
         }
 
         async function loadChats() {
