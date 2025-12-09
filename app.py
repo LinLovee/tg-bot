@@ -140,6 +140,18 @@ def init_db():
                 conn.rollback()
                 print(f"Messages migration note: {e}")
             
+            # Migration: Fix user_tags table to add CASCADE for user_id and tag_id
+            try:
+                c.execute('ALTER TABLE user_tags DROP CONSTRAINT IF EXISTS user_tags_user_id_fkey')
+                c.execute('ALTER TABLE user_tags DROP CONSTRAINT IF EXISTS user_tags_tag_id_fkey')
+                c.execute('ALTER TABLE user_tags ADD CONSTRAINT user_tags_user_id_fkey FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE')
+                c.execute('ALTER TABLE user_tags ADD CONSTRAINT user_tags_tag_id_fkey FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE')
+                conn.commit()
+                print("✅ Updated user_tags table constraints")
+            except Exception as e:
+                conn.rollback()
+                print(f"User_tags migration note: {e}")
+            
             try:
                 c.execute('''
                     CREATE TABLE IF NOT EXISTS chats (
