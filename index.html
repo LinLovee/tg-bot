@@ -68,12 +68,16 @@
             bottom: 0;
             left: 0;
             right: 0;
-            display: flex;
+            display: none;
             justify-content: space-around;
             background: var(--bg-secondary);
             border-top: 1px solid var(--border);
             padding-bottom: max(10px, env(safe-area-inset-bottom));
             z-index: 100;
+        }
+
+        .navbar.visible {
+            display: flex;
         }
 
         .nav-btn {
@@ -235,6 +239,12 @@
         .btn-primary:active {
             transform: scale(0.98);
             opacity: 0.8;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text);
+            margin-top: 8px;
         }
 
         /* Discovery/Search Cards */
@@ -403,6 +413,55 @@
             font-size: 10px;
         }
 
+        /* Profile View */
+        .profile-view {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin: 0 auto 12px;
+        }
+
+        .profile-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .profile-city {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .profile-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .profile-stat:last-child {
+            border-bottom: none;
+        }
+
         /* Alerts */
         .alert {
             padding: 12px 16px;
@@ -411,9 +470,9 @@
             font-size: 14px;
         }
 
-        .alert.info {
-            background: #e3f2fd;
-            color: #0d47a1;
+        .alert.success {
+            background: #e8f5e9;
+            color: #1b5e20;
         }
 
         .alert.warning {
@@ -421,24 +480,14 @@
             color: #e65100;
         }
 
-        .alert.success {
-            background: #e8f5e9;
-            color: #1b5e20;
-        }
-
-        [data-theme="dark"] .alert.info {
-            background: rgba(13, 71, 161, 0.2);
-            color: #81d4fa;
+        [data-theme="dark"] .alert.success {
+            background: rgba(27, 94, 32, 0.2);
+            color: #81c784;
         }
 
         [data-theme="dark"] .alert.warning {
             background: rgba(230, 81, 0, 0.2);
             color: #ffb74d;
-        }
-
-        [data-theme="dark"] .alert.success {
-            background: rgba(27, 94, 32, 0.2);
-            color: #81c784;
         }
     </style>
 </head>
@@ -448,9 +497,11 @@
             <h1>💕 Dating</h1>
         </div>
 
-        <!-- Profile Section -->
-        <div id="profile-section" class="section active">
+        <!-- Setup Profile Section -->
+        <div id="setup-section" class="section active">
             <div class="profile-form">
+                <h2 style="text-align: center; margin-bottom: 20px;">Create Your Profile</h2>
+                
                 <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
                     <img id="photoPreview" style="display: none;" />
                     <div class="photo-upload-text" id="photoPlaceholder">
@@ -461,31 +512,31 @@
                 <input type="file" id="photoInput" accept="image/*" />
 
                 <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" id="name" placeholder="Your name" />
+                    <label>Name *</label>
+                    <input type="text" id="setup-name" placeholder="Your name" />
                 </div>
 
                 <div class="form-group">
-                    <label>Age</label>
-                    <input type="number" id="age" placeholder="Age" />
+                    <label>Age *</label>
+                    <input type="number" id="setup-age" placeholder="Age" min="18" />
                 </div>
 
                 <div class="form-group">
-                    <label>City</label>
-                    <input type="text" id="city" placeholder="Your city" />
+                    <label>City *</label>
+                    <input type="text" id="setup-city" placeholder="Your city" />
                 </div>
 
                 <div class="form-group">
-                    <label>Bio</label>
-                    <textarea id="bio" placeholder="Tell us about yourself"></textarea>
+                    <label>Bio *</label>
+                    <textarea id="setup-bio" placeholder="Tell us about yourself"></textarea>
                 </div>
 
                 <div class="form-group">
                     <label>Interests (Select multiple)</label>
-                    <div class="tags-container" id="tags-container"></div>
+                    <div class="tags-container" id="setup-tags-container"></div>
                 </div>
 
-                <button class="btn btn-primary" onclick="saveProfile()">💾 Save Profile</button>
+                <button class="btn btn-primary" onclick="saveProfile()">💾 Create Profile</button>
             </div>
         </div>
 
@@ -501,19 +552,28 @@
         <div id="matches-section" class="section">
             <div id="match-icebreaker" style="margin-bottom: 16px;"></div>
             <div class="matches-grid" id="matches-grid"></div>
+            <div id="no-matches" style="text-align: center; color: var(--text-secondary);">No matches yet 😔</div>
+        </div>
+
+        <!-- Profile Edit Section -->
+        <div id="profile-section" class="section">
+            <div id="profile-view-container"></div>
+            <button class="btn btn-primary" onclick="editProfile()">✏️ Edit Profile</button>
+            <button class="btn btn-secondary" onclick="showEditForm()">Change Details</button>
         </div>
     </div>
 
-    <div class="navbar">
-        <button class="nav-btn active" onclick="switchSection('profile')">👤</button>
-        <button class="nav-btn" onclick="switchSection('discovery')">❤️</button>
+    <div class="navbar" id="navbar">
+        <button class="nav-btn active" onclick="switchSection('discovery')">❤️</button>
         <button class="nav-btn" onclick="switchSection('matches')">💬</button>
+        <button class="nav-btn" onclick="switchSection('profile')">👤</button>
     </div>
 
     <script>
         let userData = null;
         let allTags = [];
         let selectedTags = [];
+        let currentPhotoData = null;
         const API_BASE = window.location.origin + '/api';
         const tg = window.Telegram?.WebApp;
 
@@ -544,29 +604,23 @@
 
             // Load tags
             allTags = await fetch(`${API_BASE}/tags`).then(r => r.json());
-            renderTags();
+            renderSetupTags();
 
             // Load user profile
             const existing = await fetch(`${API_BASE}/user/${user.id}`).then(r => r.ok ? r.json() : null);
-            if (existing) {
-                document.getElementById('name').value = existing.name || '';
-                document.getElementById('age').value = existing.age || '';
-                document.getElementById('city').value = existing.city || '';
-                document.getElementById('bio').value = existing.bio || '';
-                selectedTags = (existing.tags || []).map(t => t.id);
-                if (existing.photo_url) {
-                    document.getElementById('photoPreview').src = existing.photo_url;
-                    document.getElementById('photoPreview').style.display = 'block';
-                    document.getElementById('photoPlaceholder').style.display = 'none';
-                }
-                renderTags();
+            if (existing && existing.name && existing.age && existing.city && existing.bio) {
+                // Profile exists - go to discovery
+                userData = existing;
+                document.getElementById('navbar').classList.add('visible');
+                switchSection('discovery');
+            } else {
+                // No profile - show setup
+                document.getElementById('setup-section').classList.add('active');
             }
-
-            loadProfiles();
         }
 
-        function renderTags() {
-            const container = document.getElementById('tags-container');
+        function renderSetupTags() {
+            const container = document.getElementById('setup-tags-container');
             container.innerHTML = allTags.map(tag => `
                 <div class="tag ${selectedTags.includes(tag.id) ? 'selected' : ''}" 
                      onclick="toggleTag(${tag.id})">
@@ -581,14 +635,24 @@
             } else {
                 selectedTags.push(tagId);
             }
-            renderTags();
+            renderSetupTags();
         }
 
         async function saveProfile() {
+            const name = document.getElementById('setup-name').value;
+            const age = document.getElementById('setup-age').value;
+            const city = document.getElementById('setup-city').value;
+            const bio = document.getElementById('setup-bio').value;
+
+            if (!name || !age || !city || !bio) {
+                alert('⚠️ Please fill all fields');
+                return;
+            }
+
             hapticFeedback('light');
-            const photoFile = document.getElementById('photoInput').files[0];
             let photoUrl = null;
 
+            const photoFile = document.getElementById('photoInput').files[0];
             if (photoFile) {
                 const reader = new FileReader();
                 reader.onload = async (e) => {
@@ -599,21 +663,21 @@
                         body: JSON.stringify({ user_id: userData.id, photo_data: photoData })
                     }).then(r => r.json());
                     photoUrl = uploadRes.photo_url;
-                    sendProfileData(photoUrl);
+                    finalizeSaveProfile(name, age, city, bio, photoUrl);
                 };
                 reader.readAsDataURL(photoFile);
             } else {
-                sendProfileData(photoUrl);
+                finalizeSaveProfile(name, age, city, bio, photoUrl);
             }
         }
 
-        async function sendProfileData(photoUrl) {
+        async function finalizeSaveProfile(name, age, city, bio, photoUrl) {
             const profile = {
                 id: userData.id,
-                name: document.getElementById('name').value,
-                age: parseInt(document.getElementById('age').value),
-                city: document.getElementById('city').value,
-                bio: document.getElementById('bio').value,
+                name: name,
+                age: parseInt(age),
+                city: city,
+                bio: bio,
                 photo_url: photoUrl,
                 tag_ids: selectedTags
             };
@@ -623,7 +687,15 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(profile)
             });
+
+            userData = profile;
             hapticFeedback('medium');
+            
+            // Show navbar and switch to discovery
+            document.getElementById('navbar').classList.add('visible');
+            document.getElementById('setup-section').classList.remove('active');
+            switchSection('discovery');
+            loadProfiles();
         }
 
         async function loadProfiles() {
@@ -694,27 +766,83 @@
         async function loadMatches() {
             const matches = await fetch(`${API_BASE}/matches/${userData.id}`).then(r => r.json());
             const grid = document.getElementById('matches-grid');
-            grid.innerHTML = matches.map(match => `
-                <div class="match-item">
-                    ${match.photo_url ? `<img src="${match.photo_url}" class="match-photo" />` : '<div class="match-photo"></div>'}
-                    <div class="match-info">
-                        <div class="match-name">${match.name}</div>
-                        <div class="match-tags">
-                            ${(match.common_tags || []).map(t => `<div class="match-tag">${t.emoji}</div>`).join('')}
+            if (matches.length === 0) {
+                grid.innerHTML = '';
+                document.getElementById('no-matches').style.display = 'block';
+            } else {
+                document.getElementById('no-matches').style.display = 'none';
+                grid.innerHTML = matches.map(match => `
+                    <div class="match-item">
+                        ${match.photo_url ? `<img src="${match.photo_url}" class="match-photo" />` : '<div class="match-photo"></div>'}
+                        <div class="match-info">
+                            <div class="match-name">${match.name}</div>
+                            <div class="match-tags">
+                                ${(match.common_tags || []).map(t => `<div class="match-tag">${t.emoji}</div>`).join('')}
+                            </div>
                         </div>
                     </div>
+                `).join('');
+            }
+        }
+
+        function showProfileView() {
+            const container = document.getElementById('profile-view-container');
+            container.innerHTML = `
+                <div class="profile-view">
+                    <div class="profile-header">
+                        ${userData.photo_url ? `<img src="${userData.photo_url}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;" />` : '<div class="profile-avatar">👤</div>'}
+                        <div class="profile-name">${userData.name}</div>
+                        <div class="profile-city">📍 ${userData.city}</div>
+                    </div>
+                    <div class="profile-stat">
+                        <span>Age</span>
+                        <span>${userData.age}</span>
+                    </div>
+                    <div class="profile-stat">
+                        <span>Bio</span>
+                        <span style="text-align: right;">${userData.bio}</span>
+                    </div>
+                    ${(userData.tags && userData.tags.length > 0) ? `
+                        <div class="profile-stat">
+                            <span>Interests</span>
+                            <span>${userData.tags.map(t => t.emoji).join(' ')}</span>
+                        </div>
+                    ` : ''}
                 </div>
-            `).join('');
+            `;
+        }
+
+        function editProfile() {
+            document.getElementById('setup-name').value = userData.name;
+            document.getElementById('setup-age').value = userData.age;
+            document.getElementById('setup-city').value = userData.city;
+            document.getElementById('setup-bio').value = userData.bio;
+            selectedTags = (userData.tags || []).map(t => t.id);
+            renderSetupTags();
+            switchSection('setup');
+        }
+
+        function showEditForm() {
+            alert('Edit form functionality coming soon!');
         }
 
         function switchSection(section) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`${section}-section`).classList.add('active');
-            event.target.classList.add('active');
-
-            if (section === 'discovery') loadProfiles();
-            if (section === 'matches') loadMatches();
+            
+            if (section === 'discovery') {
+                document.getElementById('discovery-section').classList.add('active');
+                document.querySelectorAll('.nav-btn')[0].classList.add('active');
+                loadProfiles();
+            } else if (section === 'matches') {
+                document.getElementById('matches-section').classList.add('active');
+                document.querySelectorAll('.nav-btn')[1].classList.add('active');
+                loadMatches();
+            } else if (section === 'profile') {
+                document.getElementById('profile-section').classList.add('active');
+                document.querySelectorAll('.nav-btn')[2].classList.add('active');
+                showProfileView();
+            }
         }
 
         document.getElementById('photoInput').addEventListener('change', (e) => {
