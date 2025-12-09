@@ -303,19 +303,19 @@ def get_ai_icebreaker(user1_id, user2_id):
         if common_tags:
             tag = common_tags[0]
             icebreakers = {
-                'Sport': f"Wow, you both love sports! {tag['emoji']} What's your favorite team?",
-                'Crypto': f"Crypto enthusiasts! {tag['emoji']} What's your favorite coin?",
-                'Travel': f"You both love traveling! {tag['emoji']} What was your last trip?",
-                'Music': f"Music lovers! {tag['emoji']} What's your favorite artist?",
-                'Dogs': f"You both have dogs! {tag['emoji']} Tell about yours!",
-                'Fitness': f"Fitness buddies! {tag['emoji']} What's your workout routine?",
-                'Food': f"Foodies! {tag['emoji']} What's your favorite cuisine?",
+                'Sport': f"Ух ты, вы оба любите спорт! {tag['emoji']} Какая твоя любимая команда?",
+                'Crypto': f"Крипто-энтузиасты! {tag['emoji']} Какая твоя любимая монета?",
+                'Travel': f"Вы оба любите путешествия! {tag['emoji']} Какая была твоя последняя поездка?",
+                'Music': f"Любители музыки! {tag['emoji']} Кто твой любимый исполнитель?",
+                'Dogs': f"У вас обоих есть собаки! {tag['emoji']} Расскажи о своей!",
+                'Fitness': f"Пара фитнес-ботаников! {tag['emoji']} Какой у тебя график тренировок?",
+                'Food': f"Гурманы! {tag['emoji']} Какая твоя любимая кухня?",
             }
-            return icebreakers.get(tag['name'], f"You both love {tag['name']}! {tag['emoji']}")
+            return icebreakers.get(tag['name'], f"Вы оба любите {tag['name']}! {tag['emoji']}")
     except Exception as e:
         print(f"Error generating icebreaker: {e}")
     
-    return 'Say hi and break the ice!'
+    return 'Напиши привет и начни разговор!'
 
 # ======================== VALIDATION ========================
 
@@ -402,18 +402,29 @@ def create_user():
 
 @app.route('/api/profiles/<int:user_id>', methods=['GET'])
 def get_profiles(user_id):
-    """Get profiles for search"""
+    """Get profiles for search - exclude liked and disliked users"""
     delete_expired_chats()
     reset_daily_likes(user_id)
     
-    # Get liked IDs
-    likes = execute_query('SELECT to_user FROM likes WHERE from_user = ?', (user_id,), fetch_all=True)
-    liked_ids = [row['to_user'] for row in likes]
-    liked_ids.append(user_id)
+    # Get all users that current user has already interacted with (liked or disliked)
+    interacted = execute_query('''
+        SELECT to_user FROM likes WHERE from_user = ?
+    ''', (user_id,), fetch_all=True)
     
-    # Get profiles with tags
-    query = 'SELECT id, name, age, city, bio, photo_url FROM users WHERE id != ALL(%s) LIMIT 50'
-    profiles = execute_query(query, (liked_ids,), fetch_all=True)
+    interacted_ids = [row['to_user'] for row in interacted]
+    interacted_ids.append(user_id)  # Also exclude self
+    
+    # Get profiles that user hasn't interacted with
+    if interacted_ids:
+        # Use parameterized query to safely pass the list
+        placeholders = ','.join(['%s'] * len(interacted_ids))
+        query = f'SELECT id, name, age, city, bio, photo_url FROM users WHERE id NOT IN ({placeholders}) LIMIT 50'
+        profiles = execute_query(query, tuple(interacted_ids), fetch_all=True)
+    else:
+        profiles = execute_query(
+            'SELECT id, name, age, city, bio, photo_url FROM users WHERE id != %s LIMIT 50',
+            (user_id,), fetch_all=True
+        )
     
     # Add tags for each profile
     for profile in profiles:
