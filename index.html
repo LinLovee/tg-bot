@@ -501,17 +501,40 @@
         }
 
         async function deleteProfile() {
-            if (!confirm('⚠️ Это акция необратима! Вы снова построите профиль. Уставокю?')) return;
-            if (!confirm('Настоятельно удалить данные?')) return;
+            if (!confirm('⚠️ Это действие необратимо! Все данные будут удалены. Продолжить?')) return;
+            if (!confirm('⚠️ Действительно удалить профиль?')) return;
             hapticFeedback('heavy');
             try {
-                await fetch(`${API_BASE}/user/${userData.id}`, { method: 'DELETE' });
-            } catch (e) { console.error('Delete error:', e); return; }
+                const res = await fetch(`${API_BASE}/user/${userData.id}`, { method: 'DELETE' });
+                if (!res.ok) {
+                    alert('⚠️ Ошибка при удалении профиля');
+                    return;
+                }
+            } catch (e) { console.error('Delete error:', e); alert('⚠️ Ошибка: ' + e.message); return; }
+            
+            // Полная очистка всех данных
             userData = null;
             selectedTags = [];
+            allProfiles = [];
+            allLikes = [];
+            currentChat = null;
+            
+            // Очистка формы
+            document.getElementById('setup-name').value = '';
+            document.getElementById('setup-age').value = '';
+            document.getElementById('setup-city').value = '';
+            document.getElementById('setup-bio').value = '';
+            document.getElementById('photoInput').value = '';
+            document.getElementById('photoPreview').style.display = 'none';
+            document.getElementById('photoPlaceholder').style.display = 'block';
+            
+            // Переход на форму создания
             document.getElementById('setup-section').classList.add('active');
             document.getElementById('profile-section').classList.remove('active');
             document.getElementById('navbar').classList.remove('visible');
+            
+            hapticFeedback('medium');
+            alert('✅ Профиль удален. Создай новый!');
         }
 
         function switchSection(section) {
