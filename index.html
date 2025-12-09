@@ -51,15 +51,23 @@
             text-align: center;
             margin-bottom: 20px;
             padding-top: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
         }
 
         .header h1 {
             font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .discovery-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .discovery-header h2 {
+            font-size: 24px;
             margin: 0;
-            flex: 1;
         }
 
         .filter-toggle-btn {
@@ -75,8 +83,6 @@
 
         .filter-toggle-btn:active {
             transform: scale(0.95);
-            background: var(--accent);
-            color: white;
         }
 
         .filter-toggle-btn.active {
@@ -85,19 +91,16 @@
             border-color: var(--accent);
         }
 
-        /* Filters */
         .filters {
             background: var(--bg-secondary);
             border-radius: 16px;
             padding: 16px;
             margin-bottom: 20px;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+            display: none;
         }
 
         .filters.visible {
-            max-height: 300px;
+            display: block;
         }
 
         .filter-group {
@@ -215,8 +218,7 @@
             font-size: 14px;
         }
 
-        .form-group input,
-        .form-group textarea {
+        .form-group input, .form-group textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid var(--border);
@@ -306,7 +308,6 @@
             transform: scale(0.98);
         }
 
-        /* Card Stack */
         .card-stack {
             position: relative;
             width: 100%;
@@ -330,21 +331,11 @@
             overflow: hidden;
         }
 
-        .card.swipe-right {
-            animation: swipeRight 0.5s forwards;
-        }
+        .card.swipe-right { animation: swipeRight 0.5s forwards; }
+        .card.swipe-left { animation: swipeLeft 0.5s forwards; }
 
-        .card.swipe-left {
-            animation: swipeLeft 0.5s forwards;
-        }
-
-        @keyframes swipeRight {
-            to { transform: translateX(400px) rotate(20deg); opacity: 0; }
-        }
-
-        @keyframes swipeLeft {
-            to { transform: translateX(-400px) rotate(-20deg); opacity: 0; }
-        }
+        @keyframes swipeRight { to { transform: translateX(400px) rotate(20deg); opacity: 0; } }
+        @keyframes swipeLeft { to { transform: translateX(-400px) rotate(-20deg); opacity: 0; } }
 
         .card-photo {
             width: 100%;
@@ -419,7 +410,6 @@
             transform: scale(0.9);
         }
 
-        /* Likes Grid */
         .likes-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -437,10 +427,7 @@
             box-shadow: 0 4px 12px var(--shadow);
         }
 
-        .like-item:active {
-            transform: scale(0.95);
-        }
-
+        .like-item:active { transform: scale(0.95); }
         .like-badge {
             position: absolute;
             top: 8px;
@@ -453,32 +440,27 @@
             font-weight: 600;
             z-index: 10;
         }
-
         .like-photo {
             width: 100%;
             height: 200px;
             background: var(--border);
             object-fit: cover;
         }
-
         .like-info {
             padding: 12px;
         }
-
         .like-name {
             font-weight: 600;
             font-size: 14px;
             margin-bottom: 4px;
         }
 
-        /* Chat Screen */
         .chat-list {
             display: flex;
             flex-direction: column;
             gap: 8px;
             margin-bottom: 20px;
         }
-
         .chat-item {
             background: var(--bg-secondary);
             border-radius: 12px;
@@ -486,18 +468,13 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-
-        .chat-item:active {
-            background: var(--border);
-        }
-
+        .chat-item:active { background: var(--border); }
         .chat-header {
             display: flex;
             align-items: center;
             gap: 12px;
             margin-bottom: 8px;
         }
-
         .chat-avatar {
             width: 40px;
             height: 40px;
@@ -510,30 +487,17 @@
             font-weight: 600;
             font-size: 18px;
         }
-
-        .chat-info {
-            flex: 1;
-        }
-
+        .chat-info { flex: 1; }
         .chat-name {
             font-weight: 600;
             font-size: 14px;
         }
-
         .chat-preview {
             font-size: 12px;
             color: var(--text-secondary);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-        }
-
-        /* Messages Screen */
-        .messages-container {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            gap: 12px;
         }
 
         .chat-header-bar {
@@ -545,7 +509,6 @@
             align-items: center;
             margin-bottom: 16px;
         }
-
         .chat-back-btn {
             background: none;
             border: none;
@@ -553,7 +516,6 @@
             cursor: pointer;
             color: var(--text);
         }
-
         .messages-list {
             flex: 1;
             overflow-y: auto;
@@ -562,32 +524,27 @@
             gap: 8px;
             padding: 8px 0;
         }
-
         .message {
             padding: 12px 16px;
             border-radius: 16px;
             max-width: 85%;
             word-wrap: break-word;
         }
-
         .message.own {
             align-self: flex-end;
             background: var(--accent);
             color: white;
         }
-
         .message.other {
             align-self: flex-start;
             background: var(--bg-secondary);
             color: var(--text);
         }
-
         .message-time {
             font-size: 11px;
             opacity: 0.7;
             margin-top: 4px;
         }
-
         .message-input {
             display: flex;
             gap: 8px;
@@ -596,7 +553,6 @@
             border-radius: 12px;
             margin-top: 12px;
         }
-
         .message-input input {
             flex: 1;
             border: none;
@@ -606,7 +562,6 @@
             border-radius: 8px;
             font-size: 14px;
         }
-
         .message-send-btn {
             background: var(--accent);
             color: white;
@@ -620,13 +575,11 @@
             justify-content: center;
             font-size: 18px;
         }
-
         .empty-state {
             text-align: center;
             padding: 40px 20px;
             color: var(--text-secondary);
         }
-
         .empty-state-emoji {
             font-size: 48px;
             margin-bottom: 12px;
@@ -637,109 +590,51 @@
     <div class="container">
         <div class="header">
             <h1>💕 Dating</h1>
-            <button id="filter-btn" class="filter-toggle-btn" style="display: none;" onclick="toggleFilters()">🔍</button>
         </div>
 
-        <!-- Setup Profile Section -->
+        <!-- Setup Profile -->
         <div id="setup-section" class="section active">
             <div class="profile-form">
                 <h2 style="text-align: center; margin-bottom: 20px;">😍 Создай профиль</h2>
-                
                 <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
                     <img id="photoPreview" style="display: none;" />
-                    <div id="photoPlaceholder" style="text-align: center;">
-                        <div style="font-size: 32px; margin-bottom: 4px;">📸</div>
-                        <div style="font-size: 13px;">Загруж фото</div>
-                    </div>
+                    <div id="photoPlaceholder" style="text-align: center;"><div style="font-size: 32px; margin-bottom: 4px;">📸</div><div style="font-size: 13px;">Загруж фото</div></div>
                 </div>
                 <input type="file" id="photoInput" accept="image/*" />
-
-                <div class="form-group">
-                    <label>✏️ Имя *</label>
-                    <input type="text" id="setup-name" placeholder="Твоё имя" />
-                </div>
-
-                <div class="form-group">
-                    <label>🎂 Возраст *</label>
-                    <input type="number" id="setup-age" placeholder="18+" min="18" />
-                </div>
-
-                <div class="form-group">
-                    <label>📍 Город *</label>
-                    <input type="text" id="setup-city" placeholder="Твой город" />
-                </div>
-
-                <div class="form-group">
-                    <label>💬 О себе *</label>
-                    <textarea id="setup-bio" placeholder="Расскажи о себе..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>🎯 Интересы</label>
-                    <div class="tags-container" id="setup-tags-container"></div>
-                </div>
-
+                <div class="form-group"><label>✏️ Имя *</label><input type="text" id="setup-name" placeholder="Твоё имя" /></div>
+                <div class="form-group"><label>🎂 Возраст *</label><input type="number" id="setup-age" placeholder="18+" min="18" /></div>
+                <div class="form-group"><label>📍 Город *</label><input type="text" id="setup-city" placeholder="Твой город" /></div>
+                <div class="form-group"><label>💬 О себе *</label><textarea id="setup-bio" placeholder="Расскажи о себе..."></textarea></div>
+                <div class="form-group"><label>🎯 Интересы</label><div class="tags-container" id="setup-tags-container"></div></div>
                 <button class="btn btn-primary" onclick="saveProfile()">✅ Создать</button>
             </div>
         </div>
 
-        <!-- Discovery Section -->
+        <!-- Discovery -->
         <div id="discovery-section" class="section">
+            <div class="discovery-header"><h2>😋 Анкеты</h2><button id="filter-btn" class="filter-toggle-btn" onclick="toggleFilters()">🔍</button></div>
             <div class="filters" id="filters-panel">
-                <div class="filter-group">
-                    <label>🎂 Возраст</label>
-                    <div class="age-range">
-                        <input type="number" id="filter-age-min" placeholder="От" min="18" value="18" />
-                        <input type="number" id="filter-age-max" placeholder="До" min="18" value="99" />
-                    </div>
-                </div>
-                <div class="filter-group">
-                    <label>📍 Город</label>
-                    <input type="text" id="filter-city" placeholder="Оставь пустым для всех" />
-                </div>
+                <div class="filter-group"><label>🎂 Возраст</label><div class="age-range"><input type="number" id="filter-age-min" placeholder="От" min="18" value="18" /><input type="number" id="filter-age-max" placeholder="До" min="18" value="99" /></div></div>
+                <div class="filter-group"><label>📍 Город</label><input type="text" id="filter-city" placeholder="Оставь пустым для всех" /></div>
             </div>
-
             <div class="card-stack" id="card-stack"></div>
             <div id="no-profiles" class="empty-state"></div>
         </div>
 
-        <!-- Likes Section -->
+        <!-- Likes -->
         <div id="likes-section" class="section">
             <div class="likes-grid" id="likes-grid"></div>
-            <div id="no-likes" class="empty-state" style="display: none;">
-                <div class="empty-state-emoji">😔</div>
-                <div>Кто-то тебя лайкнул</div>
-                <div style="font-size: 12px; margin-top: 8px;">Ответь лайком и напиши ему!</div>
-            </div>
+            <div id="no-likes" class="empty-state" style="display: none;"><div class="empty-state-emoji">😔</div><div>Кто-то тебя лайкнул</div><div style="font-size: 12px; margin-top: 8px;">Ответь лайком и напиши ему!</div></div>
         </div>
 
-        <!-- Messages Section -->
+        <!-- Messages -->
         <div id="messages-section" class="section">
-            <div id="chat-list-view">
-                <div class="chat-list" id="chat-list"></div>
-                <div id="no-chats" class="empty-state" style="display: none;">
-                    <div class="empty-state-emoji">📬</div>
-                    <div>Нет переписки</div>
-                </div>
-            </div>
-
-            <div id="chat-detail-view" style="display: none;">
-                <div class="chat-header-bar">
-                    <button class="chat-back-btn" onclick="backToChats()">← Назад</button>
-                    <div id="chat-user-info"></div>
-                </div>
-                <div class="messages-list" id="messages-list"></div>
-                <div class="message-input">
-                    <input type="text" id="message-input" placeholder="Написать..." />
-                    <button class="message-send-btn" onclick="sendMessage()">✈️</button>
-                </div>
-            </div>
+            <div id="chat-list-view"><div class="chat-list" id="chat-list"></div><div id="no-chats" class="empty-state" style="display: none;"><div class="empty-state-emoji">📬</div><div>Нет переписки</div></div></div>
+            <div id="chat-detail-view" style="display: none;"><div class="chat-header-bar"><button class="chat-back-btn" onclick="backToChats()">← Назад</button><div id="chat-user-info"></div></div><div class="messages-list" id="messages-list"></div><div class="message-input"><input type="text" id="message-input" placeholder="Написать..." /><button class="message-send-btn" onclick="sendMessage()">✈️</button></div></div>
         </div>
 
-        <!-- Profile Section -->
-        <div id="profile-section" class="section">
-            <div id="profile-view-container"></div>
-        </div>
+        <!-- Profile -->
+        <div id="profile-section" class="section"><div id="profile-view-container"></div></div>
     </div>
 
     <div class="navbar" id="navbar">
@@ -750,67 +645,27 @@
     </div>
 
     <script>
-        let userData = null;
-        let allTags = [];
-        let selectedTags = [];
-        let allProfiles = [];
-        let allLikes = [];
-        let currentChat = null;
-        let filters = { ageMin: 18, ageMax: 99, city: '' };
-        let filtersVisible = false;
-        
+        let userData = null, allTags = [], selectedTags = [], allProfiles = [], allLikes = [], currentChat = null;
+        let filters = { ageMin: 18, ageMax: 99, city: '' }, filtersVisible = false;
         const API_BASE = window.location.origin + '/api';
         const tg = window.Telegram?.WebApp;
 
-        if (tg) {
-            tg.ready();
-            applyTheme();
-            tg.onEvent('themeChanged', applyTheme);
-        }
-
-        function applyTheme() {
-            if (tg?.colorScheme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            } else {
-                document.documentElement.removeAttribute('data-theme');
-            }
-        }
-
-        function hapticFeedback(type = 'medium') {
-            if (tg?.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred(type);
-            }
-        }
-
-        function toggleFilters() {
-            filtersVisible = !filtersVisible;
-            const filterPanel = document.getElementById('filters-panel');
-            const filterBtn = document.getElementById('filter-btn');
-            
-            if (filtersVisible) {
-                filterPanel.classList.add('visible');
-                filterBtn.classList.add('active');
-                hapticFeedback('light');
-            } else {
-                filterPanel.classList.remove('visible');
-                filterBtn.classList.remove('active');
-            }
-        }
+        if (tg) { tg.ready(); applyTheme(); tg.onEvent('themeChanged', applyTheme); }
+        function applyTheme() { document.documentElement.setAttribute('data-theme', tg?.colorScheme === 'dark' ? 'dark' : ''); }
+        function hapticFeedback(type = 'medium') { if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred(type); }
+        function toggleFilters() { filtersVisible = !filtersVisible; const fp = document.getElementById('filters-panel'); const fb = document.getElementById('filter-btn'); fp.classList.toggle('visible', filtersVisible); fb.classList.toggle('active', filtersVisible); hapticFeedback('light'); }
 
         async function init() {
             if (!tg?.initDataUnsafe?.user) return;
             const user = tg.initDataUnsafe.user;
             userData = { id: user.id };
-
             allTags = await fetch(`${API_BASE}/tags`).then(r => r.json()).catch(() => []);
             renderSetupTags();
-
             const existing = await fetch(`${API_BASE}/user/${user.id}`).then(r => r.ok ? r.json() : null);
             if (existing?.name && existing?.age && existing?.city && existing?.bio) {
                 userData = existing;
                 document.getElementById('setup-section').classList.remove('active');
                 document.getElementById('navbar').classList.add('visible');
-                document.getElementById('filter-btn').style.display = 'block';
                 switchSection('discovery');
                 loadProfiles();
                 loadLikes();
@@ -820,18 +675,11 @@
 
         function renderSetupTags() {
             const container = document.getElementById('setup-tags-container');
-            container.innerHTML = allTags.map(tag => `
-                <div class="tag ${selectedTags.includes(tag.id) ? 'selected' : ''}" 
-                     onclick="toggleTag(${tag.id})">
-                    ${tag.emoji} ${tag.name}
-                </div>
-            `).join('');
+            container.innerHTML = allTags.map(tag => `<div class="tag ${selectedTags.includes(tag.id) ? 'selected' : ''}" onclick="toggleTag(${tag.id})">${tag.emoji} ${tag.name}</div>`).join('');
         }
 
         function toggleTag(tagId) {
-            selectedTags = selectedTags.includes(tagId) 
-                ? selectedTags.filter(id => id !== tagId)
-                : [...selectedTags, tagId];
+            selectedTags = selectedTags.includes(tagId) ? selectedTags.filter(id => id !== tagId) : [...selectedTags, tagId];
             renderSetupTags();
         }
 
@@ -840,15 +688,8 @@
             const age = document.getElementById('setup-age').value;
             const city = document.getElementById('setup-city').value;
             const bio = document.getElementById('setup-bio').value;
-
-            if (!name || !age || !city || !bio) {
-                alert('⚠️ Заполни все поля!');
-                return;
-            }
-
+            if (!name || !age || !city || !bio) { alert('⚠️ Заполни все поля!'); return; }
             hapticFeedback('light');
-            let photoUrl = null;
-
             const photoFile = document.getElementById('photoInput').files[0];
             if (photoFile) {
                 const reader = new FileReader();
@@ -870,30 +711,18 @@
             await fetch(`${API_BASE}/user`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id: userData.id,
-                    name, age: parseInt(age), city, bio,
-                    photo_url: photoUrl,
-                    tag_ids: selectedTags
-                })
+                body: JSON.stringify({ id: userData.id, name, age: parseInt(age), city, bio, photo_url: photoUrl, tag_ids: selectedTags })
             });
-
             userData = { id: userData.id, name, age: parseInt(age), city, bio, photo_url: photoUrl, tags: [] };
             hapticFeedback('medium');
-            
             document.getElementById('setup-section').classList.remove('active');
             document.getElementById('navbar').classList.add('visible');
-            document.getElementById('filter-btn').style.display = 'block';
             switchSection('discovery');
             loadProfiles();
         }
 
         async function loadProfiles() {
-            const params = new URLSearchParams({
-                age_min: filters.ageMin,
-                age_max: filters.ageMax,
-                city: filters.city
-            });
+            const params = new URLSearchParams({ age_min: filters.ageMin, age_max: filters.ageMax, city: filters.city });
             allProfiles = await fetch(`${API_BASE}/profiles/${userData.id}?${params}`).then(r => r.json()).catch(() => []);
             renderCards();
         }
@@ -901,60 +730,27 @@
         function renderCards() {
             const stack = document.getElementById('card-stack');
             const noProfiles = document.getElementById('no-profiles');
-            
             if (!allProfiles.length) {
-                noProfiles.innerHTML = `
-                    <div class="empty-state-emoji">🌟</div>
-                    <div>Профилей не найдено</div>
-                    <div style="font-size: 12px; margin-top: 8px;">Ты просмотрел всех. Попробуй изменить фильтры!</div>
-                `;
+                noProfiles.innerHTML = `<div class="empty-state-emoji">🌟</div><div>Профилей не найдено</div><div style="font-size: 12px; margin-top: 8px;">Ты просмотрел всех. Попробуй изменить фильтры!</div>`;
                 stack.innerHTML = '';
                 return;
             }
-
             noProfiles.innerHTML = '';
             const profile = allProfiles[0];
-            stack.innerHTML = `
-                <div class="card" data-user-id="${profile.id}">
-                    <div>
-                        ${profile.photo_url ? `<img src="${profile.photo_url}" class="card-photo" />` : '<div class="card-photo"></div>'}
-                        <div class="card-info">
-                            <h2>${profile.name}, ${profile.age}</h2>
-                            <p>📍 ${profile.city}</p>
-                            <p>${profile.bio}</p>
-                            <div class="card-tags">
-                                ${(profile.tags || []).map(t => `<span class="card-tag">${t.emoji} ${t.name}</span>`).join('')}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-actions">
-                        <button class="action-btn dislike" onclick="handleSwipe(${profile.id}, false)">👋</button>
-                        <button class="action-btn like" onclick="handleSwipe(${profile.id}, true)">❤️</button>
-                    </div>
-                </div>
-            `;
+            stack.innerHTML = `<div class="card" data-user-id="${profile.id}"><div>${profile.photo_url ? `<img src="${profile.photo_url}" class="card-photo" />` : '<div class="card-photo"></div>'}<div class="card-info"><h2>${profile.name}, ${profile.age}</h2><p>📍 ${profile.city}</p><p>${profile.bio}</p><div class="card-tags">${(profile.tags || []).map(t => `<span class="card-tag">${t.emoji} ${t.name}</span>`).join('')}</div></div></div><div class="card-actions"><button class="action-btn dislike" onclick="handleSwipe(${profile.id}, false)">👋</button><button class="action-btn like" onclick="handleSwipe(${profile.id}, true)">❤️</button></div></div>`;
         }
 
         async function handleSwipe(toUserId, isLike) {
             hapticFeedback('medium');
             const card = document.querySelector(`[data-user-id="${toUserId}"]`);
             card.classList.add(isLike ? 'swipe-right' : 'swipe-left');
-
             const res = await fetch(`${API_BASE}/like`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ from_user: userData.id, to_user: toUserId })
             }).then(r => r.json());
-
-            if (res.match) {
-                hapticFeedback('heavy');
-                loadChats();
-            }
-
-            setTimeout(() => {
-                allProfiles = allProfiles.filter(p => p.id !== toUserId);
-                renderCards();
-            }, 500);
+            if (res.match) { hapticFeedback('heavy'); loadChats(); }
+            setTimeout(() => { allProfiles = allProfiles.filter(p => p.id !== toUserId); renderCards(); }, 500);
         }
 
         async function loadLikes() {
@@ -963,9 +759,7 @@
         }
 
         function renderLikes() {
-            const grid = document.getElementById('likes-grid');
-            const noLikes = document.getElementById('no-likes');
-
+            const grid = document.getElementById('likes-grid'), noLikes = document.getElementById('no-likes');
             if (!allLikes.length) {
                 grid.innerHTML = '';
                 noLikes.style.display = 'block';
@@ -974,37 +768,20 @@
                 noLikes.style.display = 'none';
                 document.getElementById('likes-badge').textContent = allLikes.length;
                 document.getElementById('likes-badge').style.display = 'flex';
-
-                grid.innerHTML = allLikes.map(like => `
-                    <div class="like-item" onclick="handleLikedProfile(${like.id})">
-                        <div class="like-badge">❤️</div>
-                        ${like.photo_url ? `<img src="${like.photo_url}" class="like-photo" />` : '<div class="like-photo"></div>'}
-                        <div class="like-info">
-                            <div class="like-name">${like.name}, ${like.age}</div>
-                            <div style="font-size: 12px; color: var(--text-secondary);">📍 ${like.city}</div>
-                        </div>
-                    </div>
-                `).join('');
+                grid.innerHTML = allLikes.map(like => `<div class="like-item" onclick="handleLikedProfile(${like.id})"><div class="like-badge">❤️</div>${like.photo_url ? `<img src="${like.photo_url}" class="like-photo" />` : '<div class="like-photo"></div>'}<div class="like-info"><div class="like-name">${like.name}, ${like.age}</div><div style="font-size: 12px; color: var(--text-secondary);">📍 ${like.city}</div></div></div>`).join('');
             }
         }
 
         async function handleLikedProfile(likedUserId) {
             hapticFeedback('light');
-            
             const action = confirm(`👋 ${allLikes.find(l => l.id === likedUserId)?.name}\n\nНажми OK если понравился, Отмена чтобы скрыть`);
-            
             if (action) {
                 const res = await fetch(`${API_BASE}/like`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ from_user: userData.id, to_user: likedUserId })
                 }).then(r => r.json());
-
-                if (res.match) {
-                    hapticFeedback('heavy');
-                    alert('🎉 Матч! Пиши ему первым!');
-                    loadChats();
-                }
+                if (res.match) { hapticFeedback('heavy'); alert('🎉 Матч! Пиши ему первым!'); loadChats(); }
             } else {
                 await fetch(`${API_BASE}/like`, {
                     method: 'POST',
@@ -1013,17 +790,13 @@
                 }).then(r => r.json());
                 hapticFeedback('light');
             }
-
             allLikes = allLikes.filter(l => l.id !== likedUserId);
             renderLikes();
         }
 
         async function loadChats() {
             const chats = await fetch(`${API_BASE}/chats/${userData.id}`).then(r => r.json()).catch(() => []);
-            const listView = document.getElementById('chat-list-view');
-            const chatList = document.getElementById('chat-list');
-            const noChats = document.getElementById('no-chats');
-
+            const chatList = document.getElementById('chat-list'), noChats = document.getElementById('no-chats');
             if (!chats.length) {
                 chatList.innerHTML = '';
                 noChats.style.display = 'block';
@@ -1032,18 +805,7 @@
                 noChats.style.display = 'none';
                 document.getElementById('chat-badge').textContent = chats.length;
                 document.getElementById('chat-badge').style.display = 'flex';
-
-                chatList.innerHTML = chats.map(chat => `
-                    <div class="chat-item" onclick="openChat(${chat.user_id}, '${chat.user_name}', '${chat.user_photo || ''}')">
-                        <div class="chat-header">
-                            <div class="chat-avatar">${chat.user_name.charAt(0).toUpperCase()}</div>
-                            <div class="chat-info">
-                                <div class="chat-name">${chat.user_name}</div>
-                                <div class="chat-preview">${chat.last_message || 'Начни разговор...'}</div>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
+                chatList.innerHTML = chats.map(chat => `<div class="chat-item" onclick="openChat(${chat.user_id}, '${chat.user_name}', '${chat.user_photo || ''}')"><div class="chat-header"><div class="chat-avatar">${chat.user_name.charAt(0).toUpperCase()}</div><div class="chat-info"><div class="chat-name">${chat.user_name}</div><div class="chat-preview">${chat.last_message || 'Начни разговор...'}</div></div></div></div>`).join('');
             }
         }
 
@@ -1066,12 +828,7 @@
             if (!currentChat) return;
             const messages = await fetch(`${API_BASE}/messages/${currentChat.userId}/${userData.id}`).then(r => r.json()).catch(() => []);
             const msgList = document.getElementById('messages-list');
-            msgList.innerHTML = messages.map(msg => `
-                <div class="message ${msg.from_user === userData.id ? 'own' : 'other'}">
-                    <div>${msg.text}</div>
-                    <div class="message-time">${new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>
-                </div>
-            `).join('');
+            msgList.innerHTML = messages.map(msg => `<div class="message ${msg.from_user === userData.id ? 'own' : 'other'}"><div>${msg.text}</div><div class="message-time">${new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div></div>`).join('');
             msgList.scrollTop = msgList.scrollHeight;
         }
 
@@ -1079,17 +836,11 @@
             const input = document.getElementById('message-input');
             const text = input.value.trim();
             if (!text || !currentChat) return;
-
             await fetch(`${API_BASE}/message`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    from_user: userData.id,
-                    to_user: currentChat.userId,
-                    text
-                })
+                body: JSON.stringify({ from_user: userData.id, to_user: currentChat.userId, text })
             }).then(r => r.json());
-
             input.value = '';
             loadMessages();
             hapticFeedback('light');
@@ -1105,7 +856,6 @@
             if (section === 'discovery') {
                 document.getElementById('discovery-section').classList.add('active');
                 document.querySelectorAll('.nav-btn')[0].classList.add('active');
-                
                 filters.ageMin = parseInt(document.getElementById('filter-age-min').value) || 18;
                 filters.ageMax = parseInt(document.getElementById('filter-age-max').value) || 99;
                 filters.city = document.getElementById('filter-city').value || '';
@@ -1128,19 +878,7 @@
 
         function showProfileView() {
             const container = document.getElementById('profile-view-container');
-            container.innerHTML = `
-                <div class="profile-form">
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        ${userData.photo_url ? `<img src="${userData.photo_url}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; box-shadow: 0 4px 12px var(--shadow);" />` : ''}
-                        <h2>${userData.name}, ${userData.age}</h2>
-                        <p style="color: var(--text-secondary); margin: 4px 0 16px;">📍 ${userData.city}</p>
-                    </div>
-                    <div style="margin-bottom: 16px;">
-                        <h3>💬 О мне</h3>
-                        <p style="margin-top: 8px;">${userData.bio}</p>
-                    </div>
-                </div>
-            `;
+            container.innerHTML = `<div class="profile-form"><div style="text-align: center; margin-bottom: 20px;">${userData.photo_url ? `<img src="${userData.photo_url}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; box-shadow: 0 4px 12px var(--shadow);" />` : ''}<h2>${userData.name}, ${userData.age}</h2><p style="color: var(--text-secondary); margin: 4px 0 16px;">📍 ${userData.city}</p></div><div style="margin-bottom: 16px;"><h3>💬 О мне</h3><p style="margin-top: 8px;">${userData.bio}</p></div></div>`;
         }
 
         document.getElementById('photoInput').addEventListener('change', (e) => {
