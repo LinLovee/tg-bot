@@ -3,590 +3,746 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>💕 Dating App</title>
+    <title>LinLove</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         :root {
-            --bg: #ffffff; --bg-secondary: #f5f5f7; --text: #000000; --text-secondary: #666666;
-            --border: #e5e5e7; --accent: #ff5a5f; --success: #34c759; --warning: #ff9500; --shadow: rgba(0, 0, 0, 0.1);
+            --bg: #020617;
+            --glass: rgba(15, 23, 42, 0.72);
+            --glass-soft: rgba(15, 23, 42, 0.52);
+            --accent: #ff4b8b;
+            --accent-soft: rgba(255, 75, 139, 0.16);
+            --success: #4ade80;
+            --danger: #fb7185;
+            --text: #f9fafb;
+            --text-muted: #9ca3af;
+            --border-subtle: rgba(148, 163, 184, 0.18);
+            --shadow-strong: 0 18px 55px rgba(15, 23, 42, 0.85);
+            --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.65);
         }
+
         [data-theme="dark"] {
-            --bg: #1a1a1a; --bg-secondary: #2a2a2a; --text: #ffffff; --text-secondary: #999999;
-            --border: #333333; --shadow: rgba(255, 255, 255, 0.1);
+            /* same tokens in dark, Telegram сам отдаст colorScheme */
         }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); transition: background 0.3s, color 0.3s; padding-bottom: 120px; }
-        .container { max-width: 420px; margin: 0 auto; padding: 16px; }
-        .header { text-align: center; margin-bottom: 20px; padding-top: 12px; }
-        .header h1 { font-size: 28px; margin-bottom: 8px; }
-        .discovery-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-        .discovery-header h2 { font-size: 24px; margin: 0; }
-        .filter-toggle-btn { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 16px; cursor: pointer; transition: all 0.2s; color: var(--text); }
-        .filter-toggle-btn:active { transform: scale(0.95); }
-        .filter-toggle-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-        .filters { background: var(--bg-secondary); border-radius: 16px; padding: 16px; margin-bottom: 20px; display: none; }
-        .filters.visible { display: block; }
-        .filter-group { margin-bottom: 16px; }
-        .filter-group label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 8px; color: var(--text-secondary); }
-        .filter-group input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 14px; }
-        .age-range { display: flex; gap: 8px; }
-        .age-range input { flex: 1; }
-        .navbar { position: fixed; bottom: 0; left: 0; right: 0; display: none; justify-content: space-around; background: var(--bg-secondary); border-top: 1px solid var(--border); padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 100; backdrop-filter: blur(10px); }
-        .navbar.visible { display: flex; }
-        .nav-btn { flex: 1; padding: 12px; text-align: center; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 24px; transition: all 0.2s; position: relative; }
-        .nav-btn.active { color: var(--accent); transform: scale(1.1); }
-        .nav-badge { position: absolute; top: 4px; right: 8px; background: var(--warning); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
-        .section { display: none; animation: fadeIn 0.3s; }
-        .section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .profile-form { background: var(--bg-secondary); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
-        .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); font-family: inherit; font-size: 16px; }
-        .form-group textarea { resize: vertical; min-height: 100px; }
-        .photo-upload { position: relative; width: 150px; height: 150px; margin: 0 auto 20px; border: 2px dashed var(--border); border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: var(--bg); transition: all 0.3s; }
-        .photo-upload:hover { border-color: var(--accent); background: var(--bg-secondary); }
-        .photo-upload img { max-width: 100%; max-height: 100%; border-radius: 14px; object-fit: cover; }
-        .photo-upload input[type="file"] { display: none; }
-        .tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-        .tag { padding: 8px 12px; border: 2px solid var(--border); border-radius: 20px; background: var(--bg); color: var(--text); cursor: pointer; transition: all 0.2s; font-size: 13px; }
-        .tag.selected { background: var(--accent); color: white; border-color: var(--accent); }
-        .btn { padding: 12px 16px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .btn-primary { background: linear-gradient(135deg, var(--accent), #ff8a80); color: white; box-shadow: 0 4px 12px rgba(255, 90, 95, 0.3); width: 100%; }
-        .btn-primary:active { transform: scale(0.98); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-secondary { background: var(--bg-secondary); color: var(--text); border: 1px solid var(--border); width: 100%; margin-top: 8px; }
-        .btn-danger { background: #ff3b30; color: white; width: 100%; margin-top: 12px; }
-        .btn-small-primary { background: linear-gradient(135deg, var(--success), #81c784); color: white; }
-        .btn-small-secondary { background: #ff6b6b; color: white; }
-        .btn-small-primary:active, .btn-small-secondary:active { transform: scale(0.95); }
-        .card-stack { position: relative; width: 100%; height: 520px; margin-bottom: 20px; }
-        .card { position: absolute; width: 100%; height: 100%; background: var(--bg-secondary); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 30px var(--shadow); cursor: grab; user-select: none; overflow: hidden; }
-        .card.swipe-right { animation: swipeRight 0.5s forwards; }
-        .card.swipe-left { animation: swipeLeft 0.5s forwards; }
-        @keyframes swipeRight { to { transform: translateX(400px) rotate(20deg); opacity: 0; } }
-        @keyframes swipeLeft { to { transform: translateX(-400px) rotate(-20deg); opacity: 0; } }
-        .card-photo { width: 100%; height: 270px; background: var(--border); border-radius: 16px; object-fit: cover; margin-bottom: 16px; }
-        .card-info h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
-        .card-info p { color: var(--text-secondary); font-size: 14px; margin-bottom: 12px; line-height: 1.4; }
-        .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-        .card-tag { background: var(--accent); color: white; padding: 5px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
-        .card-actions { display: flex; gap: 12px; justify-content: center; }
-        .action-btn { width: 70px; height: 70px; border: none; border-radius: 50%; font-size: 32px; cursor: pointer; transition: all 0.2s; font-weight: 600; box-shadow: 0 4px 12px var(--shadow); display: flex; align-items: center; justify-content: center; }
-        .action-btn.like { background: linear-gradient(135deg, var(--success), #81c784); color: white; }
-        .action-btn.dislike { background: #ff6b6b; color: white; }
-        .action-btn:active { transform: scale(0.9); }
-        .likes-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-        .like-card { background: var(--bg-secondary); border-radius: 16px; padding: 12px; display: flex; gap: 12px; align-items: flex-start; box-shadow: 0 4px 12px var(--shadow); }
-        .like-card:active { transform: scale(0.98); }
-        .like-photo { width: 80px; height: 80px; background: var(--border); border-radius: 12px; object-fit: cover; flex-shrink: 0; cursor: pointer; }
-        .like-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .like-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-        .like-name { font-weight: 600; font-size: 16px; cursor: pointer; }
-        .like-badge { background: var(--accent); color: white; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 600; }
-        .like-location { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
-        .like-actions { display: flex; gap: 8px; }
-        .like-actions .btn { padding: 8px 12px; font-size: 13px; min-width: 50px; }
-        .profile-viewer { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); display: none; z-index: 200; overflow-y: auto; padding-bottom: 60px; }
-        .profile-viewer.active { display: block; }
-        .profile-viewer-header { background: var(--bg-secondary); padding: 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 201; display: flex; justify-content: space-between; align-items: center; }
-        .profile-back-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text); }
-        .profile-viewer-content { max-width: 420px; margin: 0 auto; padding: 16px; }
-        .profile-large-photo { width: 100%; height: 300px; background: var(--border); border-radius: 16px; object-fit: cover; margin-bottom: 16px; }
-        .profile-viewer-info { background: var(--bg-secondary); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
-        .profile-viewer-info h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
-        .profile-viewer-info p { color: var(--text-secondary); font-size: 14px; margin-bottom: 8px; line-height: 1.5; }
-        .chat-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-        .chat-item { background: var(--bg-secondary); border-radius: 12px; padding: 12px; cursor: pointer; transition: all 0.2s; }
-        .chat-item:active { background: var(--border); }
-        .chat-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-        .chat-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 18px; }
-        .chat-info { flex: 1; }
-        .chat-name { font-weight: 600; font-size: 14px; }
-        .chat-preview { font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .chat-header-bar { background: var(--bg-secondary); padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .chat-back-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text); }
-        .messages-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 8px 0; }
-        .message { padding: 12px 16px; border-radius: 16px; max-width: 85%; word-wrap: break-word; }
-        .message.own { align-self: flex-end; background: var(--accent); color: white; }
-        .message.other { align-self: flex-start; background: var(--bg-secondary); color: var(--text); }
-        .message-time { font-size: 11px; opacity: 0.7; margin-top: 4px; }
-        .message-input { display: flex; gap: 8px; background: var(--bg-secondary); padding: 12px; border-radius: 12px; margin-top: 12px; }
-        .message-input input { flex: 1; border: none; background: var(--bg); color: var(--text); padding: 10px; border-radius: 8px; font-size: 14px; }
-        .message-send-btn { background: var(--accent); color: white; border: none; border-radius: 8px; width: 44px; height: 44px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
-        .empty-state-emoji { font-size: 48px; margin-bottom: 12px; }
-        .btn-group { display: flex; gap: 8px; margin-top: 12px; }
-        .btn-group .btn { flex: 1; margin: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+            background: radial-gradient(circle at top, #0f172a 0, #020617 40%, #000 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: env(safe-area-inset-bottom);
+            -webkit-font-smoothing: antialiased;
+            overscroll-behavior: none;
+        }
+
+        .app-shell {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+            gap: 12px;
+            max-width: 540px;
+            margin: 0 auto;
+        }
+
+        .glass-panel {
+            border-radius: 28px;
+            background: radial-gradient(circle at top left, rgba(248, 113, 113, 0.16), transparent 55%),
+                        radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.16), transparent 55%),
+                        var(--glass);
+            border: 1px solid rgba(148, 163, 184, 0.34);
+            box-shadow: var(--shadow-strong);
+            backdrop-filter: blur(26px) saturate(180%);
+            -webkit-backdrop-filter: blur(26px) saturate(180%);
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px 10px;
+            gap: 10px;
+        }
+
+        .top-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .top-logo {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            background: radial-gradient(circle at 30% 20%, #f97316, transparent 55%),
+                        radial-gradient(circle at 70% 80%, #f43f5e, transparent 60%),
+                        #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            box-shadow: 0 8px 26px rgba(248, 113, 113, 0.75);
+        }
+
+        .top-text-main {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .top-text-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .pill-online {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(22, 163, 74, 0.16);
+            border: 1px solid rgba(74, 222, 128, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+        }
+
+        .pill-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: #22c55e;
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.9);
+        }
+
+        .screen-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feed-frame {
+            width: 100%;
+            max-width: 430px;
+            aspect-ratio: 9 / 16;
+            border-radius: 32px;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at top, rgba(248, 113, 113, 0.24), transparent 55%),
+                        radial-gradient(circle at bottom, rgba(37, 99, 235, 0.24), transparent 55%),
+                        #020617;
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            box-shadow: 0 22px 60px rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(30px) saturate(190%);
+            -webkit-backdrop-filter: blur(30px) saturate(190%);
+        }
+
+        .feed-photo-layer {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+
+        .feed-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform-origin: center;
+            transform: scale(1.04);
+            filter: saturate(1.08) contrast(1.08);
+        }
+
+        .feed-gradient-top {
+            position: absolute;
+            inset: 0 0 65%;
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.86), transparent 85%);
+            pointer-events: none;
+        }
+
+        .feed-gradient-bottom {
+            position: absolute;
+            inset: 55% 0 0;
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.96), transparent 70%);
+            pointer-events: none;
+        }
+
+        .feed-top-meta {
+            position: absolute;
+            inset: 0;
+            padding: 16px 16px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            color: #e5e7eb;
+            font-size: 13px;
+            pointer-events: none;
+        }
+
+        .age-pill {
+            padding: 6px 11px;
+            border-radius: 999px;
+            background: rgba(31, 41, 55, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.7);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 12px 25px rgba(15, 23, 42, 0.8);
+        }
+
+        .age-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: var(--accent);
+        }
+
+        .stories-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .stories-dot {
+            height: 3px;
+            width: 20px;
+            border-radius: 999px;
+            background: rgba(156, 163, 175, 0.35);
+        }
+
+        .stories-dot.active {
+            background: #f97316;
+        }
+
+        .feed-main-meta {
+            position: absolute;
+            left: 16px;
+            right: 16px;
+            bottom: 120px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            color: #f9fafb;
+        }
+
+        .name-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .name-main {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }
+
+        .city-tag {
+            padding: 6px 9px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bio-text {
+            font-size: 13px;
+            color: #e5e7eb;
+            max-width: 90%;
+            text-shadow: 0 10px 35px rgba(15, 23, 42, 0.9);
+        }
+
+        .chips-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 2px;
+        }
+
+        .chip {
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(148, 163, 184, 0.65);
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .chip-accent {
+            background: rgba(244, 63, 94, 0.18);
+            border-color: rgba(248, 113, 113, 0.85);
+        }
+
+        .actions-row {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .swipe-hint {
+            display: flex;
+            justify-content: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            gap: 6px;
+        }
+
+        .actions-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 26px;
+        }
+
+        .circle-btn {
+            width: 74px;
+            height: 74px;
+            border-radius: 999px;
+            border: none;
+            outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.16s ease-out, box-shadow 0.16s ease-out, background 0.18s;
+            box-shadow: var(--shadow-soft);
+            backdrop-filter: blur(22px) saturate(160%);
+            -webkit-backdrop-filter: blur(22px) saturate(160%);
+        }
+
+        .circle-like {
+            background: radial-gradient(circle at 30% 20%, #f97316, transparent 55%),
+                        radial-gradient(circle at 70% 80%, #f43f5e, transparent 55%),
+                        rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(248, 113, 113, 0.85);
+            color: #f9fafb;
+            font-size: 30px;
+        }
+
+        .circle-dislike {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.7);
+            color: #e5e7eb;
+            font-size: 26px;
+        }
+
+        .circle-btn:active {
+            transform: scale(0.9);
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.85);
+        }
+
+        .mini-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            background: rgba(15, 23, 42, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e5e7eb;
+            font-size: 20px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.9);
+        }
+
+        .bottom-nav-glass {
+            margin-top: auto;
+            padding: 8px 12px;
+        }
+
+        .bottom-nav-inner {
+            border-radius: 22px;
+            background: radial-gradient(circle at top, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.96));
+            border: 1px solid rgba(15, 23, 42, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 10px;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 1);
+            backdrop-filter: blur(32px) saturate(190%);
+            -webkit-backdrop-filter: blur(32px) saturate(190%);
+        }
+
+        .nav-pill-toggle {
+            display: inline-flex;
+            padding: 3px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.96);
+            border: 1px solid rgba(51, 65, 85, 0.9);
+        }
+
+        .segmented-item {
+            border-radius: 999px;
+            padding: 5px 11px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: background 0.18s, color 0.18s, transform 0.16s;
+        }
+
+        .segmented-item.active {
+            background: linear-gradient(135deg, rgba(248, 113, 113, 0.35), rgba(251, 113, 133, 0.75));
+            color: #0f172a;
+        }
+
+        .segmented-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 999px;
+            background: currentColor;
+        }
+
+        .nav-icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            border: 1px solid rgba(51, 65, 85, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #e5e7eb;
+            background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 1));
+            cursor: pointer;
+            transition: transform 0.16s, box-shadow 0.18s, background 0.18s;
+        }
+
+        .nav-icon-btn:active {
+            transform: scale(0.9);
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.9);
+        }
+
+        .nav-badge {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            min-width: 14px;
+            height: 14px;
+            border-radius: 999px;
+            background: #f97316;
+            color: #0f172a;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            box-shadow: 0 0 12px rgba(248, 113, 113, 0.95);
+        }
+
+        .nav-icon-wrapper {
+            position: relative;
+        }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 400px) {
+            .feed-frame { border-radius: 26px; }
+            .circle-btn { width: 66px; height: 66px; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header"><h1>💕 Dating</h1></div>
-        <div id="setup-section" class="section active">
-            <div class="profile-form">
-                <h2 style="text-align: center; margin-bottom: 20px;">😍 Создай профиль</h2>
-                <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
-                    <img id="photoPreview" style="display: none;" />
-                    <div id="photoPlaceholder" style="text-align: center;"><div style="font-size: 32px; margin-bottom: 4px;">📸</div><div style="font-size: 13px;">Загруж фото</div></div>
+<div class="app-shell">
+    <div class="glass-panel">
+        <div class="top-bar">
+            <div class="top-title">
+                <div class="top-logo">
+                    <span>💗</span>
                 </div>
-                <input type="file" id="photoInput" accept="image/*" />
-                <div class="form-group"><label>✏️ Имя *</label><input type="text" id="setup-name" placeholder="Твоё имя" /></div>
-                <div class="form-group"><label>🎂 Возраст *</label><input type="number" id="setup-age" placeholder="18+" min="18" /></div>
-                <div class="form-group"><label>📍 Город *</label><input type="text" id="setup-city" placeholder="Твой город" /></div>
-                <div class="form-group"><label>💬 О себе *</label><textarea id="setup-bio" placeholder="Расскажи о себе..."></textarea></div>
-                <div class="form-group"><label>🎯 Интересы</label><div class="tags-container" id="setup-tags-container"></div></div>
-                <button id="create-btn" class="btn btn-primary" onclick="saveProfile()">✅ Создать</button>
+                <div>
+                    <div class="top-text-main">LinLove</div>
+                    <div class="top-text-sub">знакомства внутри Telegram</div>
+                </div>
+            </div>
+            <div class="pill-online">
+                <div class="pill-dot"></div>
+                <span id="online-counter">1 274 онлайн</span>
             </div>
         </div>
-        <div id="discovery-section" class="section">
-            <div class="discovery-header"><h2>😋 Анкеты</h2><button id="filter-btn" class="filter-toggle-btn" onclick="toggleFilters()">🔍</button></div>
-            <div class="filters" id="filters-panel">
-                <div class="filter-group"><label>🎂 Возраст</label><div class="age-range"><input type="number" id="filter-age-min" placeholder="От" min="18" value="18" /><input type="number" id="filter-age-max" placeholder="До" min="18" value="99" /></div></div>
-                <div class="filter-group"><label>📍 Город</label><input type="text" id="filter-city" placeholder="Оставь пустым для всех" /></div>
-            </div>
-            <div class="card-stack" id="card-stack"></div>
-            <div id="no-profiles" class="empty-state"></div>
-        </div>
-        <div id="likes-section" class="section">
-            <div class="likes-container" id="likes-container"></div>
-            <div id="no-likes" class="empty-state" style="display: none;"><div class="empty-state-emoji">😔</div><div>Кто-то тебя лайкнул</div><div style="font-size: 12px; margin-top: 8px;">Ответь лайком и напиши ему!</div></div>
-        </div>
-        <div id="messages-section" class="section">
-            <div id="chat-list-view"><div class="chat-list" id="chat-list"></div><div id="no-chats" class="empty-state" style="display: none;"><div class="empty-state-emoji">📬</div><div>Нет переписки</div></div></div>
-            <div id="chat-detail-view" style="display: none;"><div class="chat-header-bar"><button class="chat-back-btn" onclick="backToChats()">← Назад</button><div id="chat-user-info"></div></div><div class="messages-list" id="messages-list"></div><div class="message-input"><input type="text" id="message-input" placeholder="Написать..." /><button class="message-send-btn" onclick="sendMessage()">✈️</button></div></div>
-        </div>
-        <div id="profile-section" class="section"><div id="profile-view-container"></div></div>
-    </div>
-    <div class="profile-viewer" id="profile-viewer">
-        <div class="profile-viewer-header">
-            <button class="profile-back-btn" onclick="closeProfileViewer()">←</button>
-            <span></span>
-        </div>
-        <div class="profile-viewer-content">
-            <img id="profile-viewer-photo" class="profile-large-photo" />
-            <div class="profile-viewer-info">
-                <h2 id="profile-viewer-name"></h2>
-                <p id="profile-viewer-location"></p>
-                <p id="profile-viewer-bio"></p>
-            </div>
-        </div>
-    </div>
-    <div class="navbar" id="navbar">
-        <button class="nav-btn active" onclick="switchSection('discovery')">❤️</button>
-        <button class="nav-btn" onclick="switchSection('likes')">👋<span class="nav-badge" id="likes-badge" style="display: none;">0</span></button>
-        <button class="nav-btn" onclick="switchSection('messages')">📬<span class="nav-badge" id="chat-badge" style="display: none;">0</span></button>
-        <button class="nav-btn" onclick="switchSection('profile')">👤</button>
-    </div>
 
-    <script>
-        let userData = null, allTags = [], selectedTags = [], allProfiles = [], allLikes = [], currentChat = null, viewingProfile = null;
-        let filters = { ageMin: 18, ageMax: 99, city: '' }, filtersVisible = false;
-        let isEditing = false, isSaving = false;
-        const API_BASE = window.location.origin + '/api';
-        const tg = window.Telegram?.WebApp;
+        <div class="screen-container">
+            <!-- FULLSCREEN 9:16 FEED CARD -->
+            <div class="feed-frame" id="feed-card">
+                <div class="feed-photo-layer">
+                    <img id="feed-photo" class="feed-photo" src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg" alt="profile" />
+                    <div class="feed-gradient-top"></div>
+                    <div class="feed-gradient-bottom"></div>
+                </div>
 
-        if (tg) { tg.ready(); applyTheme(); tg.onEvent('themeChanged', applyTheme); }
-        function applyTheme() { document.documentElement.setAttribute('data-theme', tg?.colorScheme === 'dark' ? 'dark' : ''); }
-        function hapticFeedback(type = 'medium') { if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred(type); }
-        function toggleFilters() { filtersVisible = !filtersVisible; const fp = document.getElementById('filters-panel'); const fb = document.getElementById('filter-btn'); fp.classList.toggle('visible', filtersVisible); fb.classList.toggle('active', filtersVisible); hapticFeedback('light'); }
+                <div class="feed-top-meta">
+                    <div class="age-pill">
+                        <div class="age-dot"></div>
+                        <span id="feed-age">21</span>
+                    </div>
+                    <div class="stories-dots">
+                        <div class="stories-dot active"></div>
+                        <div class="stories-dot"></div>
+                        <div class="stories-dot"></div>
+                    </div>
+                </div>
 
-        async function init() {
-            if (!tg?.initDataUnsafe?.user) return;
-            const user = tg.initDataUnsafe.user;
-            userData = { id: user.id };
-            try {
-                allTags = await fetch(`${API_BASE}/tags`).then(r => r.json()).catch(() => []);
-            } catch (e) { console.error('Tags fetch error:', e); }
-            renderSetupTags();
-            try {
-                const existing = await fetch(`${API_BASE}/user/${user.id}`).then(r => r.ok ? r.json() : null);
-                if (existing?.name && existing?.age && existing?.city && existing?.bio) {
-                    userData = existing;
-                    document.getElementById('setup-section').classList.remove('active');
-                    document.getElementById('navbar').classList.add('visible');
-                    switchSection('discovery');
-                    loadProfiles();
-                    loadLikes();
-                    loadChats();
-                }
-            } catch (e) { console.error('User fetch error:', e); }
-        }
-
-        function renderSetupTags() {
-            const container = document.getElementById('setup-tags-container');
-            container.innerHTML = allTags.map(tag => `<div class="tag ${selectedTags.includes(tag.id) ? 'selected' : ''}" onclick="toggleTag(${tag.id})">${tag.emoji} ${tag.name}</div>`).join('');
-        }
-
-        function toggleTag(tagId) {
-            selectedTags = selectedTags.includes(tagId) ? selectedTags.filter(id => id !== tagId) : [...selectedTags, tagId];
-            renderSetupTags();
-        }
-
-        async function saveProfile() {
-            if (isSaving) return;
-            isSaving = true;
-            const btn = document.getElementById('create-btn');
-            btn.disabled = true;
-            const originalText = btn.textContent;
-            btn.textContent = '⚡ Нагружаю...';
-            
-            try {
-                const name = document.getElementById('setup-name').value.trim();
-                const age = document.getElementById('setup-age').value;
-                const city = document.getElementById('setup-city').value.trim();
-                const bio = document.getElementById('setup-bio').value.trim();
-                
-                if (!name || !age || !city || !bio) {
-                    alert('⚠️ Заполни все поля!');
-                    return;
-                }
-                
-                hapticFeedback('light');
-                const photoFile = document.getElementById('photoInput').files[0];
-                let photoUrl = userData?.photo_url || null;
-                
-                if (photoFile) {
-                    try {
-                        const reader = new FileReader();
-                        const photoData = await new Promise((resolve) => {
-                            reader.onload = (e) => resolve(e.target.result);
-                            reader.readAsDataURL(photoFile);
-                        });
-                        
-                        const uploadRes = await fetch(`${API_BASE}/upload-photo`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ user_id: userData.id, photo_data: photoData })
-                        }).then(r => r.json());
-                        
-                        if (uploadRes.photo_url) {
-                            photoUrl = uploadRes.photo_url;
-                        } else {
-                            alert('⚠️ Не удалось загрузить фото');
-                            return;
-                        }
-                    } catch (e) {
-                        console.error('Photo upload error:', e);
-                        alert('⚠️ Ошибка с фото: ' + e.message);
-                        return;
-                    }
-                }
-                
-                const userRes = await fetch(`${API_BASE}/user`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: userData.id, name, age: parseInt(age), city, bio, photo_url: photoUrl, tag_ids: selectedTags })
-                }).then(r => r.json());
-                
-                if (userRes.error) {
-                    alert('⚠️ Ошибка сохранения: ' + userRes.error);
-                    return;
-                }
-                
-                userData = { id: userData.id, name, age: parseInt(age), city, bio, photo_url: photoUrl, tags: [] };
-                hapticFeedback('medium');
-                
-                if (!isEditing) {
-                    document.getElementById('setup-section').classList.remove('active');
-                    document.getElementById('navbar').classList.add('visible');
-                    switchSection('discovery');
-                    loadProfiles();
-                } else {
-                    isEditing = false;
-                    switchSection('profile');
-                    showProfileView();
-                }
-            } catch (e) {
-                console.error('Save profile error:', e);
-                alert('⚠️ Ошибка: ' + e.message);
-            } finally {
-                isSaving = false;
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        }
-
-        async function loadProfiles() {
-            try {
-                const params = new URLSearchParams({ age_min: filters.ageMin, age_max: filters.ageMax, city: filters.city });
-                allProfiles = await fetch(`${API_BASE}/profiles/${userData.id}?${params}`).then(r => r.json()).catch(() => []);
-                renderCards();
-            } catch (e) { console.error('Load profiles error:', e); }
-        }
-
-        function renderCards() {
-            const stack = document.getElementById('card-stack'), noProfiles = document.getElementById('no-profiles');
-            if (!allProfiles.length) {
-                noProfiles.innerHTML = `<div class="empty-state-emoji">🌟</div><div>Профилей не найдено</div><div style="font-size: 12px; margin-top: 8px;">Ты просмотрел всех. Попробуй изменить фильтры!</div>`;
-                stack.innerHTML = '';
-                return;
-            }
-            noProfiles.innerHTML = '';
-            const profile = allProfiles[0];
-            stack.innerHTML = `<div class="card" data-user-id="${profile.id}"><div>${profile.photo_url ? `<img src="${profile.photo_url}" class="card-photo" />` : '<div class="card-photo"></div>'}<div class="card-info"><h2>${profile.name}, ${profile.age}</h2><p>📍 ${profile.city}</p><p>${profile.bio}</p><div class="card-tags">${(profile.tags || []).map(t => `<span class="card-tag">${t.emoji} ${t.name}</span>`).join('')}</div></div></div><div class="card-actions"><button class="action-btn dislike" onclick="handleSwipe(${profile.id}, false)">👋</button><button class="action-btn like" onclick="handleSwipe(${profile.id}, true)">❤️</button></div></div>`;
-        }
-
-        async function handleSwipe(toUserId, isLike) {
-            hapticFeedback('medium');
-            const card = document.querySelector(`[data-user-id="${toUserId}"]`);
-            if (!card) return;
-            card.classList.add(isLike ? 'swipe-right' : 'swipe-left');
-            try {
-                const res = await fetch(`${API_BASE}/like`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ from_user: userData.id, to_user: toUserId })
-                }).then(r => r.json());
-                if (res.match) { hapticFeedback('heavy'); loadChats(); }
-            } catch (e) { console.error('Like error:', e); }
-            setTimeout(() => { allProfiles = allProfiles.filter(p => p.id !== toUserId); renderCards(); }, 500);
-        }
-
-        async function loadLikes() {
-            try {
-                allLikes = await fetch(`${API_BASE}/likes/${userData.id}`).then(r => r.json()).catch(() => []);
-                renderLikes();
-            } catch (e) { console.error('Load likes error:', e); }
-        }
-
-        function renderLikes() {
-            const container = document.getElementById('likes-container'), noLikes = document.getElementById('no-likes');
-            if (!allLikes.length) {
-                container.innerHTML = '';
-                noLikes.style.display = 'block';
-                document.getElementById('likes-badge').style.display = 'none';
-            } else {
-                noLikes.style.display = 'none';
-                document.getElementById('likes-badge').textContent = allLikes.length;
-                document.getElementById('likes-badge').style.display = 'flex';
-                container.innerHTML = allLikes.map(like => `
-                    <div class="like-card">
-                        <img src="${like.photo_url || ''}" class="like-photo" onclick="viewProfileDetail(${like.id}, '${like.name}', ${like.age}, '${like.city}', '${like.photo_url || ''}')" />
-                        <div class="like-info">
-                            <div class="like-header">
-                                <div class="like-name" onclick="viewProfileDetail(${like.id}, '${like.name}', ${like.age}, '${like.city}', '${like.photo_url || ''}')">​${like.name}, ${like.age}</div>
-                                <div class="like-badge">❤️</div>
-                            </div>
-                            <div class="like-location">📍 ${like.city}</div>
-                            <div class="like-actions">
-                                <button class="btn btn-small-primary" onclick="likeUser(${like.id}, '${like.name}', ${like.age}, '${like.city}', '${like.photo_url || ''}')">❤️</button>
-                                <button class="btn btn-small-secondary" onclick="dislikeUser(${like.id})">👋</button>
-                            </div>
+                <div class="feed-main-meta">
+                    <div class="name-row">
+                        <div class="name-main" id="feed-name">Алина</div>
+                        <div class="city-tag" id="feed-city">
+                            <span>📍</span>
+                            <span>Алматы</span>
                         </div>
                     </div>
-                `).join('');
-            }
-        }
+                    <div class="bio-text" id="feed-bio">
+                        Люблю поздние прогулки, кофе без сахара и разработчиков, которые не боятся переписывать код.
+                    </div>
+                    <div class="chips-row" id="feed-tags">
+                        <div class="chip chip-accent">🎧 Музыка</div>
+                        <div class="chip">🎮 Игры</div>
+                        <div class="chip">✈️ Путешествия</div>
+                    </div>
+                </div>
 
-        function viewProfileDetail(userId, name, age, city, photo) {
-            viewingProfile = { userId, name, age, city, photo };
-            document.getElementById('profile-viewer-name').textContent = `${name}, ${age}`;
-            document.getElementById('profile-viewer-location').textContent = `📍 ${city}`;
-            document.getElementById('profile-viewer-bio').textContent = 'Полный профиль';
-            if (photo) document.getElementById('profile-viewer-photo').src = photo;
-            document.getElementById('profile-viewer').classList.add('active');
-        }
+                <div class="actions-row">
+                    <div class="swipe-hint">
+                        <span>Свайпай ·</span>
+                        <span>влево — пропустить · вправо — лайк</span>
+                    </div>
 
-        function closeProfileViewer() {
-            document.getElementById('profile-viewer').classList.remove('active');
-            viewingProfile = null;
-        }
+                    <div class="actions-buttons">
+                        <button class="circle-btn circle-dislike" id="btn-dislike">👋</button>
+                        <button class="circle-btn circle-like" id="btn-like">♥</button>
+                        <button class="mini-btn" id="btn-info">⋯</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        async function likeUser(userId, userName, age, city, photo) {
-            hapticFeedback('light');
-            try {
-                await fetch(`${API_BASE}/like`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ from_user: userData.id, to_user: userId })
-                }).then(r => r.json());
-            } catch (e) { console.error('Like error:', e); return; }
-            
-            allLikes = allLikes.filter(l => l.id !== userId);
-            renderLikes();
-            await new Promise(r => setTimeout(r, 300));
-            loadChats();
-            switchSection('messages');
-        }
+    <!-- iOS‑style glass bottom navigation -->
+    <div class="bottom-nav-glass">
+        <div class="bottom-nav-inner">
+            <div class="nav-pill-toggle" id="nav-toggle">
+                <div class="segmented-item active" data-target="feed">
+                    <div class="segmented-dot"></div>
+                    <span>Анкеты</span>
+                </div>
+                <div class="segmented-item" data-target="likes">
+                    <span>Лайки</span>
+                </div>
+            </div>
 
-        async function dislikeUser(userId) {
-            hapticFeedback('light');
-            try {
-                await fetch(`${API_BASE}/like`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ from_user: userData.id, to_user: userId, dislike: true })
-                }).then(r => r.json());
-            } catch (e) { console.error('Dislike error:', e); return; }
-            
-            allLikes = allLikes.filter(l => l.id !== userId);
-            renderLikes();
-        }
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div class="nav-icon-wrapper">
+                    <button class="nav-icon-btn" id="btn-messages">💬</button>
+                    <div class="nav-badge hidden" id="badge-messages">2</div>
+                </div>
+                <button class="nav-icon-btn" id="btn-profile">👤</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        async function loadChats() {
-            try {
-                const chats = await fetch(`${API_BASE}/chats/${userData.id}`).then(r => r.json()).catch(() => []);
-                const chatList = document.getElementById('chat-list'), noChats = document.getElementById('no-chats');
-                if (!chats.length) {
-                    chatList.innerHTML = '';
-                    noChats.style.display = 'block';
-                    document.getElementById('chat-badge').style.display = 'none';
-                } else {
-                    noChats.style.display = 'none';
-                    document.getElementById('chat-badge').textContent = chats.length;
-                    document.getElementById('chat-badge').style.display = 'flex';
-                    chatList.innerHTML = chats.map(chat => `<div class="chat-item" onclick="openChat(${chat.user_id}, '${chat.user_name}', '${chat.user_photo || ''}')"><div class="chat-header"><div class="chat-avatar">${chat.user_name.charAt(0).toUpperCase()}</div><div class="chat-info"><div class="chat-name">${chat.user_name}</div><div class="chat-preview">${chat.last_message || 'Начни разговор...'}</div></div></div></div>`).join('');
-                }
-            } catch (e) { console.error('Load chats error:', e); }
-        }
+<script>
+    const tg = window.Telegram?.WebApp;
 
-        function openChat(userId, userName, userPhoto) {
-            currentChat = { userId, userName, userPhoto };
-            document.getElementById('chat-list-view').style.display = 'none';
-            document.getElementById('chat-detail-view').style.display = 'flex';
-            document.getElementById('chat-detail-view').style.flexDirection = 'column';
-            document.getElementById('chat-user-info').textContent = userName;
-            loadMessages();
+    if (tg) {
+        tg.expand();
+        tg.ready();
+        tg.enableClosingConfirmation();
+        if (tg.isClosingConfirmationEnabled) {
+            tg.disableVerticalSwipes?.();
         }
+    }
 
-        function backToChats() {
-            currentChat = null;
-            document.getElementById('chat-list-view').style.display = 'block';
-            document.getElementById('chat-detail-view').style.display = 'none';
+    function applyTheme() {
+        if (!tg) return;
+        if (tg.colorScheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
         }
+    }
 
-        async function loadMessages() {
-            if (!currentChat) return;
-            try {
-                const messages = await fetch(`${API_BASE}/messages/${currentChat.userId}/${userData.id}`).then(r => r.json()).catch(() => []);
-                const msgList = document.getElementById('messages-list');
-                msgList.innerHTML = messages.map(msg => `<div class="message ${msg.from_user === userData.id ? 'own' : 'other'}"><div>${msg.text}</div><div class="message-time">${new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div></div>`).join('');
-                msgList.scrollTop = msgList.scrollHeight;
-            } catch (e) { console.error('Load messages error:', e); }
-        }
+    if (tg) {
+        applyTheme();
+        tg.onEvent('themeChanged', applyTheme);
+    }
 
-        async function sendMessage() {
-            const input = document.getElementById('message-input');
-            const text = input.value.trim();
-            if (!text || !currentChat) return;
-            try {
-                await fetch(`${API_BASE}/message`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ from_user: userData.id, to_user: currentChat.userId, text })
-                }).then(r => r.json());
-            } catch (e) { console.error('Send message error:', e); return; }
-            input.value = '';
-            loadMessages();
-            hapticFeedback('light');
-        }
+    const likeBtn = document.getElementById('btn-like');
+    const dislikeBtn = document.getElementById('btn-dislike');
+    const infoBtn = document.getElementById('btn-info');
 
-        function editProfile() {
-            isEditing = true;
-            selectedTags = userData.tags?.map(t => t.id) || [];
-            document.getElementById('setup-name').value = userData.name || '';
-            document.getElementById('setup-age').value = userData.age || '';
-            document.getElementById('setup-city').value = userData.city || '';
-            document.getElementById('setup-bio').value = userData.bio || '';
-            if (userData.photo_url) {
-                document.getElementById('photoPreview').src = userData.photo_url;
-                document.getElementById('photoPreview').style.display = 'block';
-                document.getElementById('photoPlaceholder').style.display = 'none';
-            }
-            renderSetupTags();
-            document.getElementById('setup-section').classList.add('active');
-            document.getElementById('profile-section').classList.remove('active');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        }
+    function haptic(type = 'medium') {
+        if (!tg?.HapticFeedback) return;
+        tg.HapticFeedback.impactOccurred(type);
+    }
 
-        async function deleteProfile() {
-            if (!confirm('⚠️ Это действие необратимо! Все данные будут удалены. Продолжить?')) return;
-            if (!confirm('⚠️ Действительно удалить профиль?')) return;
-            hapticFeedback('heavy');
-            try {
-                const res = await fetch(`${API_BASE}/user/${userData.id}`, { method: 'DELETE' });
-                if (!res.ok) {
-                    alert('⚠️ Ошибка при удалении профиля');
-                    return;
-                }
-            } catch (e) { console.error('Delete error:', e); alert('⚠️ Ошибка: ' + e.message); return; }
-            
-            // Полная очистка всех данных
-            userData = null;
-            selectedTags = [];
-            allProfiles = [];
-            allLikes = [];
-            currentChat = null;
-            
-            // Очистка формы
-            document.getElementById('setup-name').value = '';
-            document.getElementById('setup-age').value = '';
-            document.getElementById('setup-city').value = '';
-            document.getElementById('setup-bio').value = '';
-            document.getElementById('photoInput').value = '';
-            document.getElementById('photoPreview').style.display = 'none';
-            document.getElementById('photoPlaceholder').style.display = 'block';
-            
-            // Переход на форму создания
-            document.getElementById('setup-section').classList.add('active');
-            document.getElementById('profile-section').classList.remove('active');
-            document.getElementById('navbar').classList.remove('visible');
-            
-            hapticFeedback('medium');
-            alert('✅ Профиль удален. Создай новый!');
-        }
+    likeBtn.addEventListener('click', () => {
+        haptic('heavy');
+        likeBtn.classList.add('pulse');
+        setTimeout(() => likeBtn.classList.remove('pulse'), 220);
+    });
 
-        function switchSection(section) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            filtersVisible = false;
-            document.getElementById('filters-panel').classList.remove('visible');
-            document.getElementById('filter-btn').classList.remove('active');
-            
-            if (section === 'discovery') {
-                document.getElementById('discovery-section').classList.add('active');
-                document.querySelectorAll('.nav-btn')[0].classList.add('active');
-                filters.ageMin = parseInt(document.getElementById('filter-age-min').value) || 18;
-                filters.ageMax = parseInt(document.getElementById('filter-age-max').value) || 99;
-                filters.city = document.getElementById('filter-city').value || '';
-                loadProfiles();
-            } else if (section === 'likes') {
-                document.getElementById('likes-section').classList.add('active');
-                document.querySelectorAll('.nav-btn')[1].classList.add('active');
-                loadLikes();
-            } else if (section === 'messages') {
-                document.getElementById('messages-section').classList.add('active');
-                document.querySelectorAll('.nav-btn')[2].classList.add('active');
-                backToChats();
-                loadChats();
-            } else if (section === 'profile') {
-                document.getElementById('profile-section').classList.add('active');
-                document.querySelectorAll('.nav-btn')[3].classList.add('active');
-                showProfileView();
-            }
-        }
+    dislikeBtn.addEventListener('click', () => {
+        haptic('light');
+    });
 
-        function showProfileView() {
-            const container = document.getElementById('profile-view-container');
-            container.innerHTML = `<div class="profile-form"><div style="text-align: center; margin-bottom: 20px;">${userData.photo_url ? `<img src="${userData.photo_url}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; box-shadow: 0 4px 12px var(--shadow);" />` : ''}<h2>${userData.name}, ${userData.age}</h2><p style="color: var(--text-secondary); margin: 4px 0 16px;">📍 ${userData.city}</p></div><div style="margin-bottom: 16px;"><h3>💬 О мне</h3><p style="margin-top: 8px;">${userData.bio}</p></div><div class="btn-group"><button class="btn btn-secondary" onclick="editProfile()">✏️ Редактировать</button></div><button class="btn btn-danger" onclick="deleteProfile()">🗑️ Удалить профиль</button></div>`;
-        }
+    infoBtn.addEventListener('click', () => {
+        haptic('light');
+    });
 
-        document.getElementById('photoInput').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const preview = document.getElementById('photoPreview');
-                    preview.src = event.target.result;
-                    preview.style.display = 'block';
-                    document.getElementById('photoPlaceholder').style.display = 'none';
-                };
-                reader.readAsDataURL(file);
-            }
+    const navToggle = document.getElementById('nav-toggle');
+    navToggle.querySelectorAll('.segmented-item').forEach(item => {
+        item.addEventListener('click', () => {
+            navToggle.querySelectorAll('.segmented-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            haptic('light');
         });
+    });
 
-        init();
-    </script>
+    const messagesBtn = document.getElementById('btn-messages');
+    const badgeMessages = document.getElementById('badge-messages');
+    const profileBtn = document.getElementById('btn-profile');
+
+    messagesBtn.addEventListener('click', () => {
+        haptic('light');
+    });
+
+    profileBtn.addEventListener('click', () => {
+        haptic('light');
+    });
+
+    const demoProfiles = [
+        {
+            name: 'Алина',
+            age: 21,
+            city: 'Алматы',
+            bio: 'Люблю поздние прогулки, кофе без сахара и разработчиков, которые не боятся переписывать код.',
+            tags: ['🎧 Музыка', '🎮 Игры', '✈️ Путешествия'],
+            photo: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
+        },
+        {
+            name: 'Даша',
+            age: 19,
+            city: 'Астана',
+            bio: 'Учусь на дизайнера, могу часами обсуждать шрифты и цветовые палитры.',
+            tags: ['🎨 Дизайн', '📷 Фото', '☕ Кофе'],
+            photo: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg'
+        },
+        {
+            name: 'Соня',
+            age: 22,
+            city: 'Москва',
+            bio: 'Интроверт, который любит людей. Если играешь в Clash Royale — уже +10 к совместимости.',
+            tags: ['🎮 Clash Royale', '📚 Книги', '🎧 Lo-fi'],
+            photo: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'
+        }
+    ];
+
+    let currentIndex = 0;
+
+    const feedPhoto = document.getElementById('feed-photo');
+    const feedName = document.getElementById('feed-name');
+    const feedAge = document.getElementById('feed-age');
+    const feedCity = document.getElementById('feed-city');
+    const feedBio = document.getElementById('feed-bio');
+    const feedTags = document.getElementById('feed-tags');
+
+    function renderProfile(index) {
+        const p = demoProfiles[index % demoProfiles.length];
+        feedPhoto.src = p.photo;
+        feedName.textContent = p.name;
+        feedAge.textContent = p.age;
+        feedCity.querySelector('span:last-child').textContent = p.city;
+        feedBio.textContent = p.bio;
+        feedTags.innerHTML = '';
+        p.tags.forEach((t, i) => {
+            const div = document.createElement('div');
+            div.className = 'chip' + (i === 0 ? ' chip-accent' : '');
+            div.textContent = t;
+            feedTags.appendChild(div);
+        });
+    }
+
+    renderProfile(0);
+
+    function nextProfile() {
+        currentIndex++;
+        renderProfile(currentIndex);
+    }
+
+    likeBtn.addEventListener('click', nextProfile);
+    dislikeBtn.addEventListener('click', nextProfile);
+
+    const feed = document.getElementById('feed-card');
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+
+    const swipeThreshold = 60;
+
+    function handleStart(x) {
+        isDragging = true;
+        startX = x;
+        currentX = x;
+        feed.style.transition = 'none';
+    }
+
+    function handleMove(x) {
+        if (!isDragging) return;
+        currentX = x;
+        const delta = currentX - startX;
+        const rotation = delta * 0.03;
+        const opacity = 1 - Math.min(Math.abs(delta) / 260, 0.6);
+        feed.style.transform = `translateX(${delta}px) rotate(${rotation}deg)`;
+        feed.style.opacity = opacity;
+    }
+
+    function handleEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        const delta = currentX - startX;
+        if (Math.abs(delta) > swipeThreshold) {
+            if (delta > 0) {
+                haptic('light');
+            } else {
+                haptic('light');
+            }
+            const direction = delta > 0 ? 1 : -1;
+            feed.style.transition = 'transform 0.22s ease-out, opacity 0.22s ease-out';
+            feed.style.transform = `translateX(${direction * 420}px) rotate(${direction * 14}deg)`;
+            feed.style.opacity = 0;
+            setTimeout(() => {
+                feed.style.transition = 'none';
+                feed.style.transform = 'translateX(0) rotate(0)';
+                feed.style.opacity = 1;
+                nextProfile();
+            }, 220);
+        } else {
+            feed.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+            feed.style.transform = 'translateX(0) rotate(0)';
+            feed.style.opacity = 1;
+        }
+    }
+
+    feed.addEventListener('touchstart', (e) => handleStart(e.touches[0].clientX));
+    feed.addEventListener('touchmove', (e) => handleMove(e.touches[0].clientX));
+    feed.addEventListener('touchend', handleEnd);
+
+    feed.addEventListener('mousedown', (e) => handleStart(e.clientX));
+    window.addEventListener('mousemove', (e) => handleMove(e.clientX));
+    window.addEventListener('mouseup', handleEnd);
+</script>
 </body>
 </html>
