@@ -209,7 +209,7 @@ def init_db():
             except:
                 conn.rollback()
             
-            print("✅ База данных скремга!")
+            print("✅ Database is ready!")
     except Exception as e:
         print(f"Init DB error: {e}")
     finally:
@@ -221,8 +221,6 @@ try:
 except:
     pass
 
-# ======================== UTILITY FUNCTIONS ========================
-
 def reset_daily_likes(user_id):
     try:
         user = execute_query('SELECT last_like_reset FROM users WHERE id = ?', (user_id,), fetch_one=True)
@@ -232,8 +230,6 @@ def reset_daily_likes(user_id):
                 execute_query('UPDATE users SET daily_likes_used = 0, last_like_reset = CURRENT_TIMESTAMP WHERE id = ?', (user_id,), commit=True)
     except:
         pass
-
-# ======================== API ROUTES ========================
 
 @app.route('/api/tags', methods=['GET'])
 def get_tags():
@@ -293,7 +289,6 @@ def get_profiles(user_id):
         interacted = execute_query('SELECT to_user FROM likes WHERE from_user = ?', (user_id,), fetch_all=True)
         interacted_ids = [row['to_user'] for row in (interacted or [])] + [user_id]
         
-        # FIX: Use proper table alias 'u' and correct SQL syntax
         where_clause = f'WHERE users.id NOT IN ({" , ".join(["%s"] * len(interacted_ids))})'
         where_clause += f' AND users.age >= %s AND users.age <= %s'
         
@@ -331,7 +326,6 @@ def like_profile():
     
     try:
         if data.get('dislike'):
-            # Delete the like/dislike
             execute_query('DELETE FROM likes WHERE from_user = ? AND to_user = ?', (data['from_user'], data['to_user']), commit=True)
         else:
             execute_query('''
@@ -340,7 +334,6 @@ def like_profile():
             
             execute_query('UPDATE users SET daily_likes_used = daily_likes_used + 1 WHERE id = ?', (data['from_user'],), commit=True)
         
-        # FIX: Changed to_user -> correct column names
         mutual = execute_query('SELECT * FROM likes WHERE from_user = ? AND to_user = ?', (data['to_user'], data['from_user']), fetch_one=True)
         
         if mutual and not data.get('dislike'):
@@ -354,7 +347,6 @@ def like_profile():
 
 @app.route('/api/likes/<int:user_id>', methods=['GET'])
 def get_likes(user_id):
-    """Get users who liked current user"""
     try:
         likes = execute_query('''
             SELECT u.id, u.name, u.age, u.city, u.photo_url
@@ -362,31 +354,25 @@ def get_likes(user_id):
             JOIN users u ON l.from_user = u.id
             WHERE l.to_user = ?
         ''', (user_id,), fetch_all=True)
-        
         return jsonify(likes or [])
     except Exception as e:
         return jsonify([])
 
 @app.route('/api/chats/<int:user_id>', methods=['GET'])
 def get_chats(user_id):
-    """Get all chats for user"""
     try:
-        # FIX: Fixed the entire query to properly handle chat partner selection
         chats = execute_query('''
             SELECT 
                 CASE WHEN user1_id = ? THEN user2_id ELSE user1_id END as user_id,
                 u.name as user_name,
                 u.photo_url as user_photo,
-                (SELECT text FROM messages WHERE (from_user = ? AND to_user = CASE WHEN chats.user1_id = ? THEN chats.user2_id ELSE chats.user1_id END) 
-                 OR (from_user = CASE WHEN chats.user1_id = ? THEN chats.user2_id ELSE chats.user1_id END AND to_user = ?) 
-                 ORDER BY created_at DESC LIMIT 1) as last_message,
+                (SELECT text FROM messages WHERE (from_user = ? AND to_user = CASE WHEN chats.user1_id = ? THEN chats.user2_id ELSE chats.user1_id END) OR (from_user = CASE WHEN chats.user1_id = ? THEN chats.user2_id ELSE chats.user1_id END AND to_user = ?) ORDER BY created_at DESC LIMIT 1) as last_message,
                 chats.created_at
             FROM chats
             JOIN users u ON (CASE WHEN user1_id = ? THEN user2_id ELSE user1_id END) = u.id
             WHERE user1_id = ? OR user2_id = ?
             ORDER BY chats.created_at DESC
         ''', (user_id, user_id, user_id, user_id, user_id, user_id, user_id, user_id), fetch_all=True)
-        
         return jsonify(chats or [])
     except Exception as e:
         print(f"Error: {e}")
@@ -394,7 +380,6 @@ def get_chats(user_id):
 
 @app.route('/api/messages/<int:user_id_1>/<int:user_id_2>', methods=['GET'])
 def get_messages(user_id_1, user_id_2):
-    """Get messages between two users - FIX: Changed from to_user to proper column"""
     try:
         messages = execute_query('''
             SELECT from_user, text, created_at
@@ -402,7 +387,6 @@ def get_messages(user_id_1, user_id_2):
             WHERE (from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?)
             ORDER BY created_at ASC
         ''', (user_id_1, user_id_2, user_id_2, user_id_1), fetch_all=True)
-        
         return jsonify(messages or [])
     except Exception as e:
         print(f"Error in get_messages: {e}")
@@ -415,7 +399,6 @@ def send_message():
         execute_query('''
             INSERT INTO messages (from_user, to_user, text) VALUES (?, ?, ?)
         ''', (data['from_user'], data['to_user'], data['text']), commit=True)
-        
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 400
@@ -426,7 +409,6 @@ def upload_photo():
     try:
         user_id = data['user_id']
         photo_base64 = data['photo_data']
-        
         photo_filename = f'{user_id}_profile.jpg'
         photo_path = os.path.join(PHOTO_DIR, photo_filename)
         
@@ -439,7 +421,6 @@ def upload_photo():
         
         photo_url = f'/api/photo/{user_id}'
         execute_query('UPDATE users SET photo_url = ? WHERE id = ?', (photo_url, user_id), commit=True)
-        
         return jsonify({'success': True, 'photo_url': photo_url})
     except Exception as e:
         return jsonify({'error': str(e)}), 400
