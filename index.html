@@ -161,13 +161,13 @@
 
         /* Likes & Chats Lists */
         .list-container { padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; height: 100%; }
-        .list-item { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s; }
+        .list-item { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s; pointer-events: auto; }
         .list-item:active { background: rgba(255,255,255,0.1); }
-        .list-avatar { width: 50px; height: 50px; border-radius: 14px; background: #334155; object-fit: cover; }
-        .list-info { flex: 1; }
+        .list-avatar { width: 50px; height: 50px; border-radius: 14px; background: #334155; object-fit: cover; pointer-events: none; }
+        .list-info { flex: 1; pointer-events: none; }
         .list-title { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
         .list-sub { font-size: 13px; color: #94a3b8; }
-        .list-actions { display: flex; gap: 8px; }
+        .list-actions { display: flex; gap: 8px; pointer-events: auto; }
         .mini-btn { padding: 6px 12px; border-radius: 8px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; }
         .btn-accept { background: #4ade80; color: #022c22; }
         .btn-reject { background: #fca5a5; color: #450a0a; }
@@ -798,22 +798,31 @@
             container.classList.remove('hidden');
 
             list.forEach(l => {
-                const safeTags = JSON.stringify(l.tags || []).replace(/"/g, '&quot;');
-                container.innerHTML += `
-                <div class="list-item" onclick="viewLikeProfile(${l.id}, '${l.name}', ${l.age}, '${l.city}', '${l.bio || ''}', '${resolvePhotoUrl(l.photo_url)}', ${safeTags})">
+                const safeTagsStr = JSON.stringify(l.tags || []).replace(/'/g, '&apos;').replace(/"/g, '&quot;');
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.onclick = () => {
+                    const profile = { 
+                        id: l.id, 
+                        name: l.name, 
+                        age: l.age, 
+                        city: l.city, 
+                        bio: l.bio || '', 
+                        photo_url: l.photo_url, 
+                        tags: l.tags || [] 
+                    };
+                    openProfileModal(profile, 'likes');
+                };
+                item.innerHTML = `
                     <img src="${resolvePhotoUrl(l.photo_url)}" class="list-avatar" onerror="this.src=PLACEHOLDER_IMG">
                     <div class="list-info">
                         <div class="list-title">${l.name}, ${l.age}</div>
                         <div class="list-sub">${l.city}</div>
                     </div>
-                </div>`;
+                `;
+                container.appendChild(item);
             });
         } catch(e) { console.error(e); }
-    }
-
-    window.viewLikeProfile = function(id, name, age, city, bio, photo_url, tags) {
-        const profile = { id, name, age, city, bio, photo_url, tags: tags || [] };
-        openProfileModal(profile, 'likes');
     }
 
     // --- CHATS ---
@@ -836,14 +845,17 @@
             document.getElementById('badge-chats').classList.remove('hidden');
 
             chats.forEach(c => {
-                container.innerHTML += `
-                <div class="list-item" onclick="openChat(${c.user_id}, '${c.user_name}', '${resolvePhotoUrl(c.user_photo)}')">
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.onclick = () => openChat(c.user_id, c.user_name, c.user_photo);
+                item.innerHTML = `
                     <img src="${resolvePhotoUrl(c.user_photo)}" class="list-avatar" onerror="this.src=PLACEHOLDER_IMG">
                     <div class="list-info">
                         <div class="list-title">${c.user_name}</div>
                         <div class="list-sub">${c.last_message || 'Написать сообщение...'}</div>
                     </div>
-                </div>`;
+                `;
+                container.appendChild(item);
             });
         } catch(e) {}
     }
