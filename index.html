@@ -414,6 +414,8 @@
         const ageMax = document.getElementById('filter-age-max').value || 99;
         const city = document.getElementById('filter-city').value || '';
         
+        if (!user || !user.id) return;
+
         const q = new URLSearchParams({ age_min: ageMin, age_max: ageMax, city });
         try {
             profiles = await fetch(`${API_BASE}/profiles/${user.id}?${q}`).then(r => r.json());
@@ -522,14 +524,10 @@
         const bio = document.getElementById('input-bio').value;
         const file = document.getElementById('setup-photo').files[0];
         
-        // If edit mode, use existing values if empty? No, require logic.
-        // For simplicity:
         if (!name || !age || !city) return alert('Заполните обязательные поля');
 
         let photoUrl = user?.photo_url;
         if (file) {
-            // Upload logic would go here. Simulating for now or need base64.
-            // In real app, we convert to base64 and send.
             const reader = new FileReader();
             reader.readAsDataURL(file);
             await new Promise(r => reader.onload = r);
@@ -557,7 +555,12 @@
         });
 
         if (res.ok) {
-            user = await res.json();
+            const newUser = await res.json();
+            // IMPORTANT: Update global user variable!
+            user = newUser.user || newUser; 
+            // Handle case where API might return {success:true, user:{...}} or just user object
+            if (user.id === undefined && newUser.id) user = newUser;
+
             showApp();
         } else {
             alert('Ошибка создания профиля');
@@ -579,7 +582,7 @@
         document.getElementById('input-bio').value = user.bio;
         document.getElementById('preview-photo').src = user.photo_url;
         document.getElementById('preview-photo').style.display = 'block';
-        // tags logic needs matching
+        document.getElementById('placeholder-photo').style.display = 'none';
     }
 
     window.deleteProfile = async function() {
@@ -591,6 +594,7 @@
 
     // --- LIKES ---
     async function loadLikes() {
+        if (!user || !user.id) return;
         const list = await fetch(`${API_BASE}/likes/${user.id}`).then(r => r.json());
         const container = document.getElementById('view-likes');
         const empty = document.getElementById('likes-empty');
@@ -638,6 +642,7 @@
 
     // --- CHATS ---
     async function loadChats() {
+        if (!user || !user.id) return;
         const chats = await fetch(`${API_BASE}/chats/${user.id}`).then(r => r.json());
         const container = document.getElementById('view-chats');
         const empty = document.getElementById('chats-empty');
@@ -684,7 +689,7 @@
     }
 
     async function loadMessages() {
-        if(!currentChatUser) return;
+        if(!currentChatUser || !user || !user.id) return;
         const msgs = await fetch(`${API_BASE}/messages/${currentChatUser}/${user.id}`).then(r => r.json());
         const area = document.getElementById('room-messages');
         area.innerHTML = msgs.map(m => `
