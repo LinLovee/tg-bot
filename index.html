@@ -329,7 +329,7 @@
             if (res.ok) {
                 user = await res.json();
                 if(user && user.name) {
-                    showApp();
+                    showApp('feed');
                 } else {
                     showSetup(false);
                 }
@@ -369,15 +369,16 @@
 
     window.cancelEdit = function() {
         editMode = false;
+        // Don't just remove hidden, ensure user sees what they expect
         document.getElementById('setup-screen').classList.add('hidden');
         document.getElementById('main-app').classList.remove('hidden');
         switchTab('profile');
     }
 
-    window.showApp = function() {
+    window.showApp = function(targetTab = 'feed') {
         document.getElementById('setup-screen').classList.add('hidden');
         document.getElementById('main-app').classList.remove('hidden');
-        switchTab('feed');
+        switchTab(targetTab);
     }
 
     window.switchTab = function(tab) {
@@ -586,16 +587,28 @@
         });
 
         if (res.ok) {
-            const newUser = await res.json();
-            user = newUser.user || newUser; 
-            if (user.id === undefined && newUser.id) user = newUser;
+            const responseData = await res.json();
+            
+            // OPTIMISTIC UPDATE: Ensure user object has valid fields immediately
+            // This prevents renderProfileSelf from throwing back to Setup if server response is incomplete
+            user = {
+                ...user, // preserve existing fields
+                ...responseData.user || responseData, // merge server data
+                name: name, // ensure we have what we just submitted
+                age: parseInt(age),
+                city: city,
+                bio: bio,
+                photo_url: photoUrl
+            };
+            
+            // Critical fix: force editMode off so we don't return to setup
+            const wasEdit = editMode;
+            editMode = false;
 
-            if (editMode) {
-                // Вернуться в приложение и показать профиль
-                showApp();
-                switchTab('profile');
+            if (wasEdit) {
+                showApp('profile'); // Return to profile
             } else {
-                showApp();
+                showApp('feed'); // New user -> feed
             }
         } else {
             alert('Ошибка сохранения анкеты');
