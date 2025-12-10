@@ -165,10 +165,10 @@
 </head>
 <body>
 
-<!-- SETUP SCREEN (Visible ONLY if no profile) -->
+<!-- SETUP SCREEN (Visible ONLY if no profile or editing) -->
 <div id="setup-screen" class="setup-screen hidden">
-    <h1 style="text-align: center; font-size: 28px; margin-top: 20px;">Добро пожаловать! 💕</h1>
-    <p style="text-align: center; color: var(--text-muted); font-size: 14px;">Создай анкету, чтобы начать знакомства</p>
+    <h1 id="setup-title" style="text-align: center; font-size: 28px; margin-top: 20px;">Добро пожаловать! 💕</h1>
+    <p id="setup-subtitle" style="text-align: center; color: var(--text-muted); font-size: 14px;">Создай анкету, чтобы начать знакомства</p>
     
     <div class="setup-content">
         <div class="photo-picker" onclick="document.getElementById('setup-photo').click()">
@@ -203,7 +203,8 @@
             <div id="setup-tags" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
         </div>
         
-        <button class="btn-primary" onclick="createProfile()">Создать анкету</button>
+        <button id="setup-primary-btn" class="btn-primary" onclick="submitProfile()">Создать анкету</button>
+        <button id="setup-cancel-btn" class="btn-secondary hidden" onclick="cancelEdit()">Отмена</button>
     </div>
 </div>
 
@@ -308,7 +309,7 @@
     let profiles = [];
     let currentProfileIdx = 0;
     let activeTab = 'feed';
-    let editMode = false;
+    let editMode = false; // false = создание, true = редактирование
     let currentChatUser = null;
 
     // --- INIT ---
@@ -330,22 +331,47 @@
                 if(user && user.name) {
                     showApp();
                 } else {
-                    showSetup();
+                    showSetup(false);
                 }
             } else {
-                showSetup();
+                showSetup(false);
             }
         } catch (e) {
-            showSetup();
+            showSetup(false);
         }
 
         loadTags();
     }
     
-    // --- NAVIGATION ---
-    window.showSetup = function() {
+    // --- NAVIGATION & SETUP MODES ---
+    window.showSetup = function(isEdit = false) {
+        editMode = isEdit;
+        const title = document.getElementById('setup-title');
+        const subtitle = document.getElementById('setup-subtitle');
+        const primaryBtn = document.getElementById('setup-primary-btn');
+        const cancelBtn = document.getElementById('setup-cancel-btn');
+
+        if (isEdit) {
+            title.textContent = 'Редактирование анкеты';
+            subtitle.textContent = 'Обнови информацию о себе и сохрани изменения';
+            primaryBtn.textContent = 'Сохранить анкету';
+            cancelBtn.classList.remove('hidden');
+        } else {
+            title.textContent = 'Добро пожаловать! 💕';
+            subtitle.textContent = 'Создай анкету, чтобы начать знакомства';
+            primaryBtn.textContent = 'Создать анкету';
+            cancelBtn.classList.add('hidden');
+        }
+
         document.getElementById('setup-screen').classList.remove('hidden');
         document.getElementById('main-app').classList.add('hidden');
+    }
+
+    window.cancelEdit = function() {
+        editMode = false;
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+        switchTab('profile');
     }
 
     window.showApp = function() {
@@ -522,7 +548,7 @@
         reader.readAsDataURL(file);
     });
 
-    window.createProfile = async function() {
+    window.submitProfile = async function() {
         const name = document.getElementById('input-name').value;
         const age = document.getElementById('input-age').value;
         const city = document.getElementById('input-city').value;
@@ -563,9 +589,16 @@
             const newUser = await res.json();
             user = newUser.user || newUser; 
             if (user.id === undefined && newUser.id) user = newUser;
-            showApp();
+
+            if (editMode) {
+                // Вернуться в приложение и показать профиль
+                showApp();
+                switchTab('profile');
+            } else {
+                showApp();
+            }
         } else {
-            alert('Ошибка создания профиля');
+            alert('Ошибка сохранения анкеты');
         }
     }
 
@@ -573,8 +606,7 @@
     window.renderProfileSelf = function() {
         try {
             if(!user || !user.name) {
-                // Should not happen, but safe fallback
-                return showSetup();
+                return showSetup(false);
             }
             document.getElementById('my-photo').src = user.photo_url || '';
             document.getElementById('my-name').textContent = `${user.name}, ${user.age}`;
@@ -583,25 +615,32 @@
     }
 
     window.startEditProfile = function() {
-        showSetup();
-        if(user) {
-            document.getElementById('input-name').value = user.name || '';
-            document.getElementById('input-age').value = user.age || '';
-            document.getElementById('input-city').value = user.city || '';
-            document.getElementById('input-bio').value = user.bio || '';
-            if(user.photo_url) {
-                document.getElementById('preview-photo').src = user.photo_url;
-                document.getElementById('preview-photo').style.display = 'block';
-                document.getElementById('placeholder-photo').style.display = 'none';
-            }
+        if (!user) return;
+        // Заполнить форму текущими данными и перейти в режим редактирования
+        document.getElementById('input-name').value = user.name || '';
+        document.getElementById('input-age').value = user.age || '';
+        document.getElementById('input-city').value = user.city || '';
+        document.getElementById('input-bio').value = user.bio || '';
+        if(user.photo_url) {
+            document.getElementById('preview-photo').src = user.photo_url;
+            document.getElementById('preview-photo').style.display = 'block';
+            document.getElementById('placeholder-photo').style.display = 'none';
         }
+        showSetup(true);
     }
 
     window.deleteProfile = async function() {
         if(!confirm('Удалить анкету?')) return;
         await fetch(`${API_BASE}/user/${user.id}`, { method: 'DELETE' });
         user = null;
-        showSetup();
+        selectedTags = [];
+        document.getElementById('preview-photo').style.display = 'none';
+        document.getElementById('placeholder-photo').style.display = 'block';
+        document.getElementById('input-name').value = '';
+        document.getElementById('input-age').value = '';
+        document.getElementById('input-city').value = '';
+        document.getElementById('input-bio').value = '';
+        showSetup(false);
     }
 
     // --- LIKES ---
