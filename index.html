@@ -237,26 +237,7 @@
             
             <!-- 1. FEED -->
             <div id="view-feed" class="feed-frame">
-                <div id="feed-photo-layer" class="feed-photo-layer">
-                    <img id="card-photo" class="feed-photo" src="" />
-                    <div class="feed-gradient-overlay"></div>
-                </div>
-                <div id="feed-content" class="feed-content">
-                    <div class="feed-name"><span id="card-name"></span>, <span id="card-age"></span></div>
-                    <div class="feed-location">📍 <span id="card-city"></span></div>
-                    <div class="feed-bio" id="card-bio"></div>
-                    <div class="feed-tags" id="card-tags"></div>
-                </div>
-                <div id="feed-actions" class="actions-float">
-                    <button class="circle-btn btn-dislike" onclick="swipe(false)">✕</button>
-                    <button class="circle-btn btn-like" onclick="swipe(true)">♥</button>
-                </div>
-                <!-- Empty Feed -->
-                <div id="feed-empty" class="empty-view hidden">
-                    <div class="empty-icon">🌍</div>
-                    <div>Анкеты закончились</div>
-                    <div style="font-size: 12px; margin-top: 8px;">Попробуй изменить фильтры</div>
-                </div>
+                <!-- Inner content injected dynamically to prevent artifacts -->
             </div>
 
             <!-- 2. LIKES -->
@@ -346,7 +327,11 @@
             const res = await fetch(`${API_BASE}/user/${tgUser.id}`);
             if (res.ok) {
                 user = await res.json();
-                showApp();
+                if(user && user.name) {
+                    showApp();
+                } else {
+                    showSetup();
+                }
             } else {
                 showSetup();
             }
@@ -380,13 +365,10 @@
             if(tab === 'chats') document.getElementById('tab-chats')?.classList.add('active');
             if(tab === 'profile') document.getElementById('tab-profile')?.classList.add('active');
 
-            // HIDE ALL VIEWS AND EMPTY STATES FIRST
+            // HIDE ALL VIEWS
             const allViews = [
-                'view-feed', 'feed-empty',
-                'view-likes', 'likes-empty',
-                'view-chats', 'chats-empty',
-                'view-profile',
-                'view-chat-room'
+                'view-feed', 'view-likes', 'likes-empty',
+                'view-chats', 'chats-empty', 'view-profile', 'view-chat-room'
             ];
             allViews.forEach(id => document.getElementById(id)?.classList.add('hidden'));
 
@@ -436,36 +418,42 @@
     }
 
     window.renderCard = function() {
-        const feedPhotoLayer = document.getElementById('feed-photo-layer');
-        const feedContent = document.getElementById('feed-content');
-        const feedActions = document.getElementById('feed-actions');
-        const feedEmpty = document.getElementById('feed-empty');
         const viewFeed = document.getElementById('view-feed');
         
         if (!profiles[currentProfileIdx]) {
-            feedPhotoLayer.classList.add('hidden');
-            feedContent.classList.add('hidden');
-            feedActions.classList.add('hidden');
-            feedEmpty.classList.remove('hidden');
-            // Ensure container is shown (handled by switchTab but double check)
-            viewFeed.classList.remove('hidden');
+            // Render Empty State via HTML to avoid artifacts
+            viewFeed.innerHTML = `
+                <div class="empty-view">
+                    <div class="empty-icon">🌍</div>
+                    <div>Анкеты закончились</div>
+                    <div style="font-size: 12px; margin-top: 8px;">Попробуй изменить фильтры</div>
+                </div>
+            `;
             return;
         }
 
-        feedEmpty.classList.add('hidden');
-        feedPhotoLayer.classList.remove('hidden');
-        feedContent.classList.remove('hidden');
-        feedActions.classList.remove('hidden');
-
         const p = profiles[currentProfileIdx];
-        document.getElementById('card-photo').src = p.photo_url;
-        document.getElementById('card-name').textContent = p.name;
-        document.getElementById('card-age').textContent = p.age;
-        document.getElementById('card-city').textContent = p.city;
-        document.getElementById('card-bio').textContent = p.bio;
+        const tagsHtml = p.tags.map(t => `<span class="feed-tag">${t.emoji} ${t.name}</span>`).join('');
         
-        const tags = document.getElementById('card-tags');
-        tags.innerHTML = p.tags.map(t => `<span class="feed-tag">${t.emoji} ${t.name}</span>`).join('');
+        // Render Card via HTML
+        viewFeed.innerHTML = `
+            <div class="feed-frame">
+                <div class="feed-photo-layer">
+                    <img class="feed-photo" src="${p.photo_url}" />
+                    <div class="feed-gradient-overlay"></div>
+                </div>
+                <div class="feed-content">
+                    <div class="feed-name">${p.name}, ${p.age}</div>
+                    <div class="feed-location">📍 ${p.city}</div>
+                    <div class="feed-bio">${p.bio || ''}</div>
+                    <div class="feed-tags">${tagsHtml}</div>
+                </div>
+                <div class="actions-float">
+                    <button class="circle-btn btn-dislike" onclick="swipe(false)">✕</button>
+                    <button class="circle-btn btn-like" onclick="swipe(true)">♥</button>
+                </div>
+            </div>
+        `;
     }
 
     window.swipe = async function(isLike) {
@@ -584,7 +572,10 @@
     // --- EDIT & DELETE ---
     window.renderProfileSelf = function() {
         try {
-            if(!user) return;
+            if(!user || !user.name) {
+                // Should not happen, but safe fallback
+                return showSetup();
+            }
             document.getElementById('my-photo').src = user.photo_url || '';
             document.getElementById('my-name').textContent = `${user.name}, ${user.age}`;
             document.getElementById('my-bio').textContent = user.bio || '';
@@ -593,13 +584,17 @@
 
     window.startEditProfile = function() {
         showSetup();
-        document.getElementById('input-name').value = user.name;
-        document.getElementById('input-age').value = user.age;
-        document.getElementById('input-city').value = user.city;
-        document.getElementById('input-bio').value = user.bio;
-        document.getElementById('preview-photo').src = user.photo_url;
-        document.getElementById('preview-photo').style.display = 'block';
-        document.getElementById('placeholder-photo').style.display = 'none';
+        if(user) {
+            document.getElementById('input-name').value = user.name || '';
+            document.getElementById('input-age').value = user.age || '';
+            document.getElementById('input-city').value = user.city || '';
+            document.getElementById('input-bio').value = user.bio || '';
+            if(user.photo_url) {
+                document.getElementById('preview-photo').src = user.photo_url;
+                document.getElementById('preview-photo').style.display = 'block';
+                document.getElementById('placeholder-photo').style.display = 'none';
+            }
+        }
     }
 
     window.deleteProfile = async function() {
