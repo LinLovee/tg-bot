@@ -167,10 +167,6 @@
         .list-info { flex: 1; pointer-events: none; }
         .list-title { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
         .list-sub { font-size: 13px; color: #94a3b8; }
-        .list-actions { display: flex; gap: 8px; pointer-events: auto; }
-        .mini-btn { padding: 6px 12px; border-radius: 8px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; }
-        .btn-accept { background: #4ade80; color: #022c22; }
-        .btn-reject { background: #fca5a5; color: #450a0a; }
 
         /* Chat Detail */
         .chat-view { display: flex; flex-direction: column; height: 100%; }
@@ -282,9 +278,7 @@
         <div class="screen-container">
             
             <!-- 1. FEED -->
-            <div id="view-feed" class="feed-frame">
-                <!-- Inner content injected dynamically to prevent artifacts -->
-            </div>
+            <div id="view-feed" class="feed-frame"></div>
 
             <!-- 2. LIKES -->
             <div id="view-likes" class="list-container hidden"></div>
@@ -338,9 +332,7 @@
                 <div class="nav-item" onclick="switchTab('likes')" id="tab-likes">Лайки</div>
             </div>
             <div class="nav-icons">
-                <div class="nav-icon" onclick="switchTab('chats')" id="tab-chats">
-                    💬 <div id="badge-chats" class="badge hidden">0</div>
-                </div>
+                <div class="nav-icon" onclick="switchTab('chats')" id="tab-chats">💬 <div id="badge-chats" class="badge hidden">0</div></div>
                 <div class="nav-icon" onclick="switchTab('profile')" id="tab-profile">👤</div>
             </div>
         </div>
@@ -350,7 +342,6 @@
 <script>
     const API_BASE = window.location.origin + '/api';
     const tg = window.Telegram?.WebApp;
-    // Gray SVG placeholder
     const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23334155'%3E%3Crect width='24' height='24' fill='%231e293b'/%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' fill='%23475569'/%3E%3C/svg%3E";
     
     let user = null;
@@ -362,58 +353,36 @@
     let modalProfile = null;
     let modalContext = 'feed';
 
-    // Helper to robustly resolve image URLs
     function resolvePhotoUrl(url) {
         if (!url || url === 'undefined' || url === 'null') return PLACEHOLDER_IMG;
         if (url.startsWith('data:') || url.startsWith('http')) return url;
-        // Handle relative paths by prepending origin
         return window.location.origin + (url.startsWith('/') ? '' : '/') + url;
     }
 
-    // --- INIT ---
     async function init() {
-        if (tg) {
-            tg.expand();
-            tg.ready();
-            tg.disableVerticalSwipes();
-        }
-        
+        if (tg) { tg.expand(); tg.ready(); tg.disableVerticalSwipes(); }
         const tgUser = tg?.initDataUnsafe?.user;
         if (!tgUser) return;
-
         try {
             const res = await fetch(`${API_BASE}/user/${tgUser.id}`);
             if (res.ok) {
                 user = await res.json();
-                if(user && user.name) {
-                    showApp('feed');
-                } else {
-                    showSetup(false);
-                }
-            } else {
-                showSetup(false);
-            }
-        } catch (e) {
-            showSetup(false);
-        }
-
+                if(user && user.name) showApp('feed');
+                else showSetup(false);
+            } else showSetup(false);
+        } catch { showSetup(false); }
         loadTags();
     }
     
-    // --- PROFILE MODAL ---
     window.openProfileModal = function(profile, context = 'feed') {
-        modalProfile = profile;
-        modalContext = context;
-        
+        modalProfile = profile; modalContext = context;
         document.getElementById('modal-photo').src = resolvePhotoUrl(profile.photo_url);
         document.getElementById('modal-name').textContent = profile.name;
         document.getElementById('modal-age').textContent = profile.age;
         document.getElementById('modal-city').textContent = profile.city;
         document.getElementById('modal-bio').textContent = profile.bio || '';
-        
         const tagsHtml = profile.tags.map(t => `<span class="feed-tag">${t.emoji} ${t.name}</span>`).join('');
         document.getElementById('modal-tags').innerHTML = tagsHtml;
-        
         document.getElementById('profile-modal').classList.remove('hidden');
     }
 
@@ -424,59 +393,34 @@
 
     window.modalSwipe = async function(isLike) {
         if (!modalProfile) return;
-        
         if (tg) tg.HapticFeedback.impactOccurred(isLike ? 'heavy' : 'light');
         
         if (modalContext === 'feed') {
-            currentProfileIdx++;
-            closeProfileModal();
-            renderCard();
-            
+            currentProfileIdx++; closeProfileModal(); renderCard();
             try {
-                const res = await fetch(`${API_BASE}/like`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ from_user: user.id, to_user: modalProfile.id, dislike: !isLike })
-                }).then(r => r.json());
-                
-                if (res.match) {
-                    if(tg) tg.HapticFeedback.notificationOccurred('success');
-                    alert(`Это Мэтч с ${modalProfile.name}! Переходим в чат.`);
-                    openChat(modalProfile.id, modalProfile.name, modalProfile.photo_url);
-                }
+                const res = await fetch(`${API_BASE}/like`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({from_user: user.id, to_user: modalProfile.id, dislike: !isLike})}).then(r => r.json());
+                if (res.match) { if(tg) tg.HapticFeedback.notificationOccurred('success'); alert(`Это Мэтч с ${modalProfile.name}! Переходим в чат.`); openChat(modalProfile.id, modalProfile.name, modalProfile.photo_url); }
             } catch(e) {}
         } else if (modalContext === 'likes') {
             closeProfileModal();
-            
             if (isLike) {
-                await fetch(`${API_BASE}/like`, {
-                    method: 'POST',
-                    headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ from_user: user.id, to_user: modalProfile.id })
-                }).then(r => r.json());
-                
+                await fetch(`${API_BASE}/like`, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({from_user: user.id, to_user: modalProfile.id})}).then(r => r.json());
                 if(tg) tg.HapticFeedback.notificationOccurred('success');
                 alert(`Мэтч с ${modalProfile.name}! Открываем чат.`);
                 openChat(modalProfile.id, modalProfile.name, modalProfile.photo_url);
             } else {
-                await fetch(`${API_BASE}/like`, {
-                    method: 'POST',
-                    headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ from_user: user.id, to_user: modalProfile.id, dislike: true })
-                });
+                await fetch(`${API_BASE}/like`, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({from_user: user.id, to_user: modalProfile.id, dislike: true})});
                 loadLikes();
             }
         }
     }
 
-    // --- NAVIGATION & SETUP ---
     window.showSetup = function(isEdit = false) {
         editMode = isEdit;
         const title = document.getElementById('setup-title');
         const subtitle = document.getElementById('setup-subtitle');
         const primaryBtn = document.getElementById('setup-primary-btn');
         const cancelBtn = document.getElementById('setup-cancel-btn');
-
         if (isEdit) {
             title.textContent = 'Редактирование анкеты';
             subtitle.textContent = 'Обнови информацию о себе и сохрани изменения';
@@ -488,7 +432,6 @@
             primaryBtn.textContent = 'Создать анкету';
             cancelBtn.classList.add('hidden');
         }
-
         document.getElementById('setup-screen').classList.remove('hidden');
         document.getElementById('main-app').classList.add('hidden');
     }
@@ -507,173 +450,68 @@
     }
 
     window.switchTab = function(tab) {
-        try {
-            activeTab = tab;
-            
-            document.querySelectorAll('.nav-item, .nav-icon').forEach(el => el.classList.remove('active'));
-            if(tab === 'feed') document.getElementById('tab-feed')?.classList.add('active');
-            if(tab === 'likes') document.getElementById('tab-likes')?.classList.add('active');
-            if(tab === 'chats') document.getElementById('tab-chats')?.classList.add('active');
-            if(tab === 'profile') document.getElementById('tab-profile')?.classList.add('active');
-
-            const allViews = [
-                'view-feed', 'view-likes', 'likes-empty',
-                'view-chats', 'chats-empty', 'view-profile', 'view-chat-room'
-            ];
-            allViews.forEach(id => document.getElementById(id)?.classList.add('hidden'));
-
-            if(tab === 'feed') {
-                document.getElementById('view-feed').classList.remove('hidden');
-                document.getElementById('filter-btn').classList.remove('hidden');
-                loadFeed();
-            } else {
-                document.getElementById('filter-btn').classList.add('hidden');
-                document.getElementById('filters-panel').classList.remove('visible');
-            }
-
-            if(tab === 'likes') {
-                document.getElementById('view-likes').classList.remove('hidden');
-                loadLikes();
-            }
-
-            if(tab === 'chats') {
-                document.getElementById('view-chats').classList.remove('hidden');
-                loadChats();
-            }
-
-            if(tab === 'profile') {
-                document.getElementById('view-profile').classList.remove('hidden');
-                renderProfileSelf();
-            }
-        } catch (e) {
-            console.error("Tab switch error:", e);
-        }
+        activeTab = tab;
+        document.querySelectorAll('.nav-item, .nav-icon').forEach(el => el.classList.remove('active'));
+        if(tab === 'feed') document.getElementById('tab-feed')?.classList.add('active');
+        if(tab === 'likes') document.getElementById('tab-likes')?.classList.add('active');
+        if(tab === 'chats') document.getElementById('tab-chats')?.classList.add('active');
+        if(tab === 'profile') document.getElementById('tab-profile')?.classList.add('active');
+        ['view-feed', 'view-likes', 'likes-empty', 'view-chats', 'chats-empty', 'view-profile', 'view-chat-room'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+        if(tab === 'feed') { document.getElementById('view-feed').classList.remove('hidden'); document.getElementById('filter-btn').classList.remove('hidden'); loadFeed(); }
+        else { document.getElementById('filter-btn').classList.add('hidden'); document.getElementById('filters-panel').classList.remove('visible'); }
+        if(tab === 'likes') { document.getElementById('view-likes').classList.remove('hidden'); loadLikes(); }
+        if(tab === 'chats') { document.getElementById('view-chats').classList.remove('hidden'); loadChats(); }
+        if(tab === 'profile') { document.getElementById('view-profile').classList.remove('hidden'); renderProfileSelf(); }
     }
 
-    // --- FEED ---
     window.loadFeed = async function() {
         const ageMin = document.getElementById('filter-age-min').value || 18;
         const ageMax = document.getElementById('filter-age-max').value || 99;
         const city = document.getElementById('filter-city').value || '';
-        
         if (!user || !user.id) return;
-
-        const q = new URLSearchParams({ age_min: ageMin, age_max: ageMax, city });
-        try {
-            profiles = await fetch(`${API_BASE}/profiles/${user.id}?${q}`).then(r => r.json());
-            currentProfileIdx = 0;
-            renderCard();
-        } catch(e) { console.error(e); }
+        const q = new URLSearchParams({age_min: ageMin, age_max: ageMax, city});
+        try { profiles = await fetch(`${API_BASE}/profiles/${user.id}?${q}`).then(r => r.json()); currentProfileIdx = 0; renderCard(); } catch(e) {}
     }
 
     window.renderCard = function() {
         const viewFeed = document.getElementById('view-feed');
-        
         if (!profiles[currentProfileIdx]) {
-            viewFeed.innerHTML = `
-                <div class="empty-view">
-                    <div class="empty-icon">🌍</div>
-                    <div>Анкеты закончились</div>
-                    <div style="font-size: 12px; margin-top: 8px;">Попробуй изменить фильтры</div>
-                </div>
-            `;
+            viewFeed.innerHTML = `<div class="empty-view"><div class="empty-icon">🌍</div><div>Анкеты закончились</div><div style="font-size: 12px; margin-top: 8px;">Попробуй изменить фильтры</div></div>`;
             return;
         }
-
         const p = profiles[currentProfileIdx];
         const tagsHtml = p.tags.map(t => `<span class="feed-tag">${t.emoji} ${t.name}</span>`).join('');
         const photoUrl = resolvePhotoUrl(p.photo_url);
-        
-        viewFeed.innerHTML = `
-            <div class="feed-frame">
-                <div class="feed-photo-layer">
-                    <img class="feed-photo" src="${photoUrl}" onerror="this.src=PLACEHOLDER_IMG" />
-                    <div class="feed-gradient-overlay"></div>
-                </div>
-                <div class="feed-content">
-                    <div class="feed-name">${p.name}, ${p.age}</div>
-                    <div class="feed-location">📍 ${p.city}</div>
-                    <div class="feed-bio">${p.bio || ''}</div>
-                    <div class="feed-tags">${tagsHtml}</div>
-                </div>
-                <div class="actions-float">
-                    <button class="circle-btn btn-dislike" onclick="swipe(false)">✕</button>
-                    <button class="circle-btn btn-info" onclick="viewProfile()">👁</button>
-                    <button class="circle-btn btn-like" onclick="swipe(true)">♥</button>
-                </div>
-            </div>
-        `;
+        viewFeed.innerHTML = `<div class="feed-frame"><div class="feed-photo-layer"><img class="feed-photo" src="${photoUrl}" onerror="this.src=PLACEHOLDER_IMG" /><div class="feed-gradient-overlay"></div></div><div class="feed-content"><div class="feed-name">${p.name}, ${p.age}</div><div class="feed-location">📍 ${p.city}</div><div class="feed-bio">${p.bio || ''}</div><div class="feed-tags">${tagsHtml}</div></div><div class="actions-float"><button class="circle-btn btn-dislike" onclick="swipe(false)">✕</button><button class="circle-btn btn-info" onclick="viewProfile()">👁</button><button class="circle-btn btn-like" onclick="swipe(true)">♥</button></div></div>`;
     }
 
-    window.viewProfile = function() {
-        const p = profiles[currentProfileIdx];
-        if (!p) return;
-        openProfileModal(p, 'feed');
-    }
-
+    window.viewProfile = function() { if (!profiles[currentProfileIdx]) return; openProfileModal(profiles[currentProfileIdx], 'feed'); }
     window.swipe = async function(isLike) {
         if (tg) tg.HapticFeedback.impactOccurred(isLike ? 'heavy' : 'light');
         const p = profiles[currentProfileIdx];
         if (!p) return;
-
-        currentProfileIdx++;
-        renderCard();
-
-        try {
-            const res = await fetch(`${API_BASE}/like`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ from_user: user.id, to_user: p.id, dislike: !isLike })
-            }).then(r => r.json());
-            
-            if (res.match) {
-                if(tg) tg.HapticFeedback.notificationOccurred('success');
-                alert(`Это Мэтч с ${p.name}! Переходим в чат.`);
-                openChat(p.id, p.name, p.photo_url);
-            }
-        } catch(e) {}
+        currentProfileIdx++; renderCard();
+        try { const res = await fetch(`${API_BASE}/like`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({from_user: user.id, to_user: p.id, dislike: !isLike})}).then(r => r.json()); if (res.match) { if(tg) tg.HapticFeedback.notificationOccurred('success'); alert(`Это Мэтч с ${p.name}! Переходим в чат.`); openChat(p.id, p.name, p.photo_url); } } catch(e) {}
     }
 
-    window.toggleFilters = function() {
-        document.getElementById('filters-panel').classList.toggle('visible');
-    }
-    
-    window.applyFilters = function() {
-        toggleFilters();
-        loadFeed();
-    }
+    window.toggleFilters = function() { document.getElementById('filters-panel').classList.toggle('visible'); }
+    window.applyFilters = function() { toggleFilters(); loadFeed(); }
 
-    // --- PROFILE CREATION / EDIT ---
     let selectedTags = [];
     async function loadTags() {
-        try {
-            const tags = await fetch(`${API_BASE}/tags`).then(r => r.json());
-            const container = document.getElementById('setup-tags');
-            container.innerHTML = tags.map(t => 
-                `<div class="feed-tag" onclick="toggleTag(${t.id}, this)" style="cursor:pointer; border:1px solid #334155">${t.emoji} ${t.name}</div>`
-            ).join('');
-        } catch(e) {}
+        try { const tags = await fetch(`${API_BASE}/tags`).then(r => r.json()); const container = document.getElementById('setup-tags'); container.innerHTML = tags.map(t => `<div class="feed-tag" onclick="toggleTag(${t.id}, this)" style="cursor:pointer; border:1px solid #334155">${t.emoji} ${t.name}</div>`).join(''); } catch(e) {}
     }
 
     window.toggleTag = function(id, el) {
-        if(selectedTags.includes(id)) {
-            selectedTags = selectedTags.filter(x => x !== id);
-            el.style.background = 'transparent';
-        } else {
-            selectedTags.push(id);
-            el.style.background = 'var(--accent)';
-        }
+        if(selectedTags.includes(id)) { selectedTags = selectedTags.filter(x => x !== id); el.style.background = 'transparent'; }
+        else { selectedTags.push(id); el.style.background = 'var(--accent)'; }
     }
 
-    document.getElementById('setup-photo').addEventListener('change', async (e) => {
+    document.getElementById('setup-photo')?.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if(!file) return;
         const reader = new FileReader();
-        reader.onload = (ev) => {
-            document.getElementById('preview-photo').src = ev.target.result;
-            document.getElementById('preview-photo').style.display = 'block';
-            document.getElementById('placeholder-photo').style.display = 'none';
-        }
+        reader.onload = (ev) => { document.getElementById('preview-photo').src = ev.target.result; document.getElementById('preview-photo').style.display = 'block'; document.getElementById('placeholder-photo').style.display = 'none'; }
         reader.readAsDataURL(file);
     });
 
@@ -686,28 +524,9 @@
         
         if (!name || !age || !city) return alert('Заполните обязательные поля');
 
-        let photoUrl = user?.photo_url;
-        if (file) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            await new Promise(r => reader.onload = r);
-            const base64 = reader.result;
-            
-            const up = await fetch(`${API_BASE}/upload-photo`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user_id: tg.initDataUnsafe.user.id, photo_data: base64 })
-            }).then(r=>r.json());
-            photoUrl = up.photo_url;
-        }
+        const payload = { id: tg.initDataUnsafe.user.id, name, age: parseInt(age), city, bio, tag_ids: selectedTags };
 
-        const payload = {
-            id: tg.initDataUnsafe.user.id,
-            name, age: parseInt(age), city, bio,
-            photo_url: photoUrl,
-            tag_ids: selectedTags
-        };
-
+        // Сохраняем профиль БЕЗ фото - быстро!
         const res = await fetch(`${API_BASE}/user`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -715,41 +534,34 @@
         });
 
         if (res.ok) {
-            const responseData = await res.json();
-            
-            user = {
-                ...user,
-                ...responseData.user || responseData,
-                name: name,
-                age: parseInt(age),
-                city: city,
-                bio: bio,
-                photo_url: photoUrl
-            };
+            // Теперь если есть фото - загружаем отдельно асинхронно
+            if (file) {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = async () => {
+                    const base64 = reader.result;
+                    await fetch(`${API_BASE}/upload-photo`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ user_id: tg.initDataUnsafe.user.id, photo_data: base64 })
+                    });
+                };
+            }
             
             const wasEdit = editMode;
             editMode = false;
+            user = { ...user, name, age: parseInt(age), city, bio, photo_url: `/api/photo/${tg.initDataUnsafe.user.id}` };
 
-            if (wasEdit) {
-                showApp('profile');
-            } else {
-                showApp('feed');
-            }
-        } else {
-            alert('Ошибка сохранения анкеты');
-        }
+            if (wasEdit) showApp('profile');
+            else showApp('feed');
+        } else alert('Ошибка сохранения анкеты');
     }
 
-    // --- EDIT & DELETE ---
     window.renderProfileSelf = function() {
-        try {
-            if(!user || !user.name) {
-                return showSetup(false);
-            }
-            document.getElementById('my-photo').src = resolvePhotoUrl(user.photo_url);
-            document.getElementById('my-name').textContent = `${user.name}, ${user.age}`;
-            document.getElementById('my-bio').textContent = user.bio || '';
-        } catch(e) { console.error(e); }
+        if(!user || !user.name) return showSetup(false);
+        document.getElementById('my-photo').src = resolvePhotoUrl(user.photo_url);
+        document.getElementById('my-name').textContent = `${user.name}, ${user.age}`;
+        document.getElementById('my-bio').textContent = user.bio || '';
     }
 
     window.startEditProfile = function() {
@@ -768,9 +580,8 @@
 
     window.deleteProfile = async function() {
         if(!confirm('Удалить анкету?')) return;
-        await fetch(`${API_BASE}/user/${user.id}`, { method: 'DELETE' });
-        user = null;
-        selectedTags = [];
+        await fetch(`${API_BASE}/user/${user.id}`, {method: 'DELETE'});
+        user = null; selectedTags = [];
         document.getElementById('preview-photo').style.display = 'none';
         document.getElementById('placeholder-photo').style.display = 'block';
         document.getElementById('input-name').value = '';
@@ -780,7 +591,6 @@
         showSetup(false);
     }
 
-    // --- LIKES ---
     window.loadLikes = async function() {
         if (!user || !user.id) return;
         try {
@@ -788,44 +598,21 @@
             const container = document.getElementById('view-likes');
             const empty = document.getElementById('likes-empty');
             container.innerHTML = '';
-            
-            if(!list.length) {
-                container.classList.add('hidden');
-                empty.classList.remove('hidden');
-                return;
-            }
-            empty.classList.add('hidden');
-            container.classList.remove('hidden');
-
+            if(!list.length) { container.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden'); container.classList.remove('hidden');
             list.forEach(l => {
-                const safeTagsStr = JSON.stringify(l.tags || []).replace(/'/g, '&apos;').replace(/"/g, '&quot;');
                 const item = document.createElement('div');
                 item.className = 'list-item';
                 item.onclick = () => {
-                    const profile = { 
-                        id: l.id, 
-                        name: l.name, 
-                        age: l.age, 
-                        city: l.city, 
-                        bio: l.bio || '', 
-                        photo_url: l.photo_url, 
-                        tags: l.tags || [] 
-                    };
+                    const profile = { id: l.id, name: l.name, age: l.age, city: l.city, bio: l.bio || '', photo_url: l.photo_url, tags: [] };
                     openProfileModal(profile, 'likes');
                 };
-                item.innerHTML = `
-                    <img src="${resolvePhotoUrl(l.photo_url)}" class="list-avatar" onerror="this.src=PLACEHOLDER_IMG">
-                    <div class="list-info">
-                        <div class="list-title">${l.name}, ${l.age}</div>
-                        <div class="list-sub">${l.city}</div>
-                    </div>
-                `;
+                item.innerHTML = `<img src="${resolvePhotoUrl(l.photo_url)}" class="list-avatar" onerror="this.src=PLACEHOLDER_IMG"><div class="list-info"><div class="list-title">${l.name}, ${l.age}</div><div class="list-sub">${l.city}</div></div>`;
                 container.appendChild(item);
             });
-        } catch(e) { console.error(e); }
+        } catch(e) {}
     }
 
-    // --- CHATS ---
     window.loadChats = async function() {
         if (!user || !user.id) return;
         try {
@@ -833,47 +620,30 @@
             const container = document.getElementById('view-chats');
             const empty = document.getElementById('chats-empty');
             container.innerHTML = '';
-            
-            if(!chats.length) {
-                container.classList.add('hidden');
-                empty.classList.remove('hidden');
-                return;
-            }
-            empty.classList.add('hidden');
-            container.classList.remove('hidden');
+            if(!chats.length) { container.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+            empty.classList.add('hidden'); container.classList.remove('hidden');
             document.getElementById('badge-chats').textContent = chats.length;
             document.getElementById('badge-chats').classList.remove('hidden');
-
             chats.forEach(c => {
                 const item = document.createElement('div');
                 item.className = 'list-item';
                 item.onclick = () => openChat(c.user_id, c.user_name, c.user_photo);
-                item.innerHTML = `
-                    <img src="${resolvePhotoUrl(c.user_photo)}" class="list-avatar" onerror="this.src=PLACEHOLDER_IMG">
-                    <div class="list-info">
-                        <div class="list-title">${c.user_name}</div>
-                        <div class="list-sub">${c.last_message || 'Написать сообщение...'}</div>
-                    </div>
-                `;
+                item.innerHTML = `<img src="${resolvePhotoUrl(c.user_photo)}" class="list-avatar" onerror="this.src=PLACEHOLDER_IMG"><div class="list-info"><div class="list-title">${c.user_name}</div><div class="list-sub">${c.last_message || 'Написать сообщение...'}</div></div>`;
                 container.appendChild(item);
             });
         } catch(e) {}
     }
 
-    // --- CHAT ROOM ---
     window.openChat = function(id, name, photo) {
         currentChatUser = id;
-        
         document.getElementById('view-chats').classList.add('hidden');
         document.getElementById('chats-empty').classList.add('hidden');
         document.getElementById('view-likes').classList.add('hidden');
         document.getElementById('likes-empty').classList.add('hidden');
         document.getElementById('view-feed').classList.add('hidden');
         document.getElementById('view-profile').classList.add('hidden');
-        
         document.getElementById('view-chat-room').classList.remove('hidden');
         document.getElementById('bottom-nav').classList.add('hidden');
-        
         document.getElementById('room-name').textContent = name;
         document.getElementById('room-avatar').src = resolvePhotoUrl(photo);
         loadMessages();
@@ -891,11 +661,7 @@
         try {
             const msgs = await fetch(`${API_BASE}/messages/${currentChatUser}/${user.id}`).then(r => r.json());
             const area = document.getElementById('room-messages');
-            area.innerHTML = msgs.map(m => `
-                <div class="message-bubble ${m.from_user == user.id ? 'msg-own' : 'msg-other'}">
-                    ${m.text}
-                </div>
-            `).join('');
+            area.innerHTML = msgs.map(m => `<div class="message-bubble ${m.from_user == user.id ? 'msg-own' : 'msg-other'}">${m.text}</div>`).join('');
             area.scrollTop = area.scrollHeight;
         } catch(e) {}
     }
@@ -903,11 +669,7 @@
     window.sendMsg = async function() {
         const txt = document.getElementById('room-input').value;
         if(!txt) return;
-        await fetch(`${API_BASE}/message`, {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ from_user: user.id, to_user: currentChatUser, text: txt })
-        });
+        await fetch(`${API_BASE}/message`, {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({from_user: user.id, to_user: currentChatUser, text: txt})});
         document.getElementById('room-input').value = '';
         loadMessages();
     }
