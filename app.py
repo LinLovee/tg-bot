@@ -10,6 +10,7 @@ import base64
 import logging
 import random
 from threading import Thread
+import io
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
