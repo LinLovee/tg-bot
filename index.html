@@ -106,6 +106,32 @@
         .circle-btn:active { transform: scale(0.9); }
         .btn-dislike { background: #1e293b; color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.3); }
         .btn-like { background: linear-gradient(135deg, #ff4b8b, #ff8a80); color: white; border: none; box-shadow: 0 10px 30px rgba(255, 75, 139, 0.4); }
+        .btn-info { background: rgba(255,255,255,0.15); color: white; width: 48px; height: 48px; font-size: 20px; }
+
+        /* Profile Modal (Fullscreen) */
+        .profile-modal {
+            position: fixed; inset: 0; z-index: 300; background: var(--bg);
+            display: flex; flex-direction: column; overflow-y: auto;
+            padding-bottom: 100px;
+        }
+        .profile-modal-header {
+            padding: 16px; display: flex; align-items: center; gap: 12px;
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .profile-modal-back { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+        .profile-modal-photo { width: 100%; aspect-ratio: 9/16; object-fit: cover; }
+        .profile-modal-content { padding: 20px; }
+        .profile-modal-name { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+        .profile-modal-location { font-size: 16px; color: var(--text-muted); margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
+        .profile-modal-bio { font-size: 16px; line-height: 1.6; margin-bottom: 16px; }
+        .profile-modal-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+        .profile-modal-actions {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            padding: 16px; background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px); display: flex; justify-content: center; gap: 20px;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+        }
 
         /* Bottom Nav */
         .bottom-nav-glass { margin-top: auto; padding: 8px 12px; position: relative; z-index: 100; pointer-events: auto; }
@@ -164,6 +190,25 @@
     </style>
 </head>
 <body>
+
+<!-- PROFILE MODAL (Fullscreen overlay) -->
+<div id="profile-modal" class="profile-modal hidden">
+    <div class="profile-modal-header">
+        <button class="profile-modal-back" onclick="closeProfileModal()">←</button>
+        <span style="font-weight: 600; font-size: 16px;">Профиль</span>
+    </div>
+    <img id="modal-photo" class="profile-modal-photo" />
+    <div class="profile-modal-content">
+        <div class="profile-modal-name"><span id="modal-name"></span>, <span id="modal-age"></span></div>
+        <div class="profile-modal-location">📍 <span id="modal-city"></span></div>
+        <div class="profile-modal-bio" id="modal-bio"></div>
+        <div class="profile-modal-tags" id="modal-tags"></div>
+    </div>
+    <div class="profile-modal-actions">
+        <button class="circle-btn btn-dislike" onclick="modalSwipe(false)">✕</button>
+        <button class="circle-btn btn-like" onclick="modalSwipe(true)">♥</button>
+    </div>
+</div>
 
 <!-- SETUP SCREEN (Visible ONLY if no profile or editing) -->
 <div id="setup-screen" class="setup-screen hidden">
@@ -309,8 +354,10 @@
     let profiles = [];
     let currentProfileIdx = 0;
     let activeTab = 'feed';
-    let editMode = false; // false = создание, true = редактирование
+    let editMode = false;
     let currentChatUser = null;
+    let modalProfile = null; // Текущий профиль в модалке
+    let modalContext = 'feed'; // 'feed' или 'likes'
 
     // --- INIT ---
     async function init() {
@@ -321,9 +368,8 @@
         }
         
         const tgUser = tg?.initDataUnsafe?.user;
-        if (!tgUser) return; // Not in TG
+        if (!tgUser) return;
 
-        // Try load user
         try {
             const res = await fetch(`${API_BASE}/user/${tgUser.id}`);
             if (res.ok) {
@@ -343,6 +389,77 @@
         loadTags();
     }
     
+    // --- PROFILE MODAL ---
+    window.openProfileModal = function(profile, context = 'feed') {
+        modalProfile = profile;
+        modalContext = context;
+        
+        document.getElementById('modal-photo').src = profile.photo_url;
+        document.getElementById('modal-name').textContent = profile.name;
+        document.getElementById('modal-age').textContent = profile.age;
+        document.getElementById('modal-city').textContent = profile.city;
+        document.getElementById('modal-bio').textContent = profile.bio || '';
+        
+        const tagsHtml = profile.tags.map(t => `<span class="feed-tag">${t.emoji} ${t.name}</span>`).join('');
+        document.getElementById('modal-tags').innerHTML = tagsHtml;
+        
+        document.getElementById('profile-modal').classList.remove('hidden');
+    }
+
+    window.closeProfileModal = function() {
+        document.getElementById('profile-modal').classList.add('hidden');
+        modalProfile = null;
+    }
+
+    window.modalSwipe = async function(isLike) {
+        if (!modalProfile) return;
+        
+        if (tg) tg.HapticFeedback.impactOccurred(isLike ? 'heavy' : 'light');
+        
+        if (modalContext === 'feed') {
+            // Свайп из ленты
+            currentProfileIdx++;
+            closeProfileModal();
+            renderCard();
+            
+            try {
+                const res = await fetch(`${API_BASE}/like`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ from_user: user.id, to_user: modalProfile.id, dislike: !isLike })
+                }).then(r => r.json());
+                
+                if (res.match) {
+                    if(tg) tg.HapticFeedback.notificationOccurred('success');
+                    alert(`Это Мэтч с ${modalProfile.name}! Переходим в чат.`);
+                    openChat(modalProfile.id, modalProfile.name, modalProfile.photo_url);
+                }
+            } catch(e) {}
+        } else if (modalContext === 'likes') {
+            // Ответ на лайк
+            closeProfileModal();
+            
+            if (isLike) {
+                await fetch(`${API_BASE}/like`, {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ from_user: user.id, to_user: modalProfile.id })
+                }).then(r => r.json());
+                
+                if(tg) tg.HapticFeedback.notificationOccurred('success');
+                alert(`Мэтч с ${modalProfile.name}! Открываем чат.`);
+                openChat(modalProfile.id, modalProfile.name, modalProfile.photo_url);
+            } else {
+                await fetch(`${API_BASE}/like`, {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ from_user: user.id, to_user: modalProfile.id, dislike: true })
+                });
+                loadLikes(); // Обновить список
+            }
+        }
+    }
+
     // --- NAVIGATION & SETUP MODES ---
     window.showSetup = function(isEdit = false) {
         editMode = isEdit;
@@ -369,7 +486,6 @@
 
     window.cancelEdit = function() {
         editMode = false;
-        // Don't just remove hidden, ensure user sees what they expect
         document.getElementById('setup-screen').classList.add('hidden');
         document.getElementById('main-app').classList.remove('hidden');
         switchTab('profile');
@@ -385,21 +501,18 @@
         try {
             activeTab = tab;
             
-            // UI Toggles
             document.querySelectorAll('.nav-item, .nav-icon').forEach(el => el.classList.remove('active'));
             if(tab === 'feed') document.getElementById('tab-feed')?.classList.add('active');
             if(tab === 'likes') document.getElementById('tab-likes')?.classList.add('active');
             if(tab === 'chats') document.getElementById('tab-chats')?.classList.add('active');
             if(tab === 'profile') document.getElementById('tab-profile')?.classList.add('active');
 
-            // HIDE ALL VIEWS
             const allViews = [
                 'view-feed', 'view-likes', 'likes-empty',
                 'view-chats', 'chats-empty', 'view-profile', 'view-chat-room'
             ];
             allViews.forEach(id => document.getElementById(id)?.classList.add('hidden'));
 
-            // Show base containers
             if(tab === 'feed') {
                 document.getElementById('view-feed').classList.remove('hidden');
                 document.getElementById('filter-btn').classList.remove('hidden');
@@ -448,7 +561,6 @@
         const viewFeed = document.getElementById('view-feed');
         
         if (!profiles[currentProfileIdx]) {
-            // Render Empty State via HTML to avoid artifacts
             viewFeed.innerHTML = `
                 <div class="empty-view">
                     <div class="empty-icon">🌍</div>
@@ -462,7 +574,6 @@
         const p = profiles[currentProfileIdx];
         const tagsHtml = p.tags.map(t => `<span class="feed-tag">${t.emoji} ${t.name}</span>`).join('');
         
-        // Render Card via HTML
         viewFeed.innerHTML = `
             <div class="feed-frame">
                 <div class="feed-photo-layer">
@@ -477,10 +588,17 @@
                 </div>
                 <div class="actions-float">
                     <button class="circle-btn btn-dislike" onclick="swipe(false)">✕</button>
+                    <button class="circle-btn btn-info" onclick="viewProfile()">👁</button>
                     <button class="circle-btn btn-like" onclick="swipe(true)">♥</button>
                 </div>
             </div>
         `;
+    }
+
+    window.viewProfile = function() {
+        const p = profiles[currentProfileIdx];
+        if (!p) return;
+        openProfileModal(p, 'feed');
     }
 
     window.swipe = async function(isLike) {
@@ -589,26 +707,23 @@
         if (res.ok) {
             const responseData = await res.json();
             
-            // OPTIMISTIC UPDATE: Ensure user object has valid fields immediately
-            // This prevents renderProfileSelf from throwing back to Setup if server response is incomplete
             user = {
-                ...user, // preserve existing fields
-                ...responseData.user || responseData, // merge server data
-                name: name, // ensure we have what we just submitted
+                ...user,
+                ...responseData.user || responseData,
+                name: name,
                 age: parseInt(age),
                 city: city,
                 bio: bio,
                 photo_url: photoUrl
             };
             
-            // Critical fix: force editMode off so we don't return to setup
             const wasEdit = editMode;
             editMode = false;
 
             if (wasEdit) {
-                showApp('profile'); // Return to profile
+                showApp('profile');
             } else {
-                showApp('feed'); // New user -> feed
+                showApp('feed');
             }
         } else {
             alert('Ошибка сохранения анкеты');
@@ -629,7 +744,6 @@
 
     window.startEditProfile = function() {
         if (!user) return;
-        // Заполнить форму текущими данными и перейти в режим редактирования
         document.getElementById('input-name').value = user.name || '';
         document.getElementById('input-age').value = user.age || '';
         document.getElementById('input-city').value = user.city || '';
@@ -675,37 +789,20 @@
 
             list.forEach(l => {
                 container.innerHTML += `
-                <div class="list-item">
+                <div class="list-item" onclick="viewLikeProfile(${l.id}, '${l.name}', ${l.age}, '${l.city}', '${l.bio || ''}', '${l.photo_url}', ${JSON.stringify(l.tags || []).replace(/"/g, '&quot;')})">
                     <img src="${l.photo_url}" class="list-avatar">
                     <div class="list-info">
                         <div class="list-title">${l.name}, ${l.age}</div>
                         <div class="list-sub">${l.city}</div>
                     </div>
-                    <div class="list-actions">
-                        <button class="mini-btn btn-accept" onclick="replyLike(${l.id}, '${l.name}', '${l.photo_url}')">❤️</button>
-                        <button class="mini-btn btn-reject" onclick="rejectLike(${l.id})">✕</button>
-                    </div>
                 </div>`;
             });
-        } catch(e) {}
+        } catch(e) { console.error(e); }
     }
 
-    window.replyLike = async function(id, name, photo) {
-        await fetch(`${API_BASE}/like`, {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ from_user: user.id, to_user: id })
-        });
-        openChat(id, name, photo);
-    }
-    
-    window.rejectLike = async function(id) {
-        await fetch(`${API_BASE}/like`, {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ from_user: user.id, to_user: id, dislike: true })
-        });
-        loadLikes();
+    window.viewLikeProfile = function(id, name, age, city, bio, photo_url, tags) {
+        const profile = { id, name, age, city, bio, photo_url, tags: tags || [] };
+        openProfileModal(profile, 'likes');
     }
 
     // --- CHATS ---
@@ -743,8 +840,16 @@
     // --- CHAT ROOM ---
     window.openChat = function(id, name, photo) {
         currentChatUser = id;
+        
+        // Hide all views
         document.getElementById('view-chats').classList.add('hidden');
-        document.getElementById('chats-empty').classList.add('hidden'); // ensure empty is hidden
+        document.getElementById('chats-empty').classList.add('hidden');
+        document.getElementById('view-likes').classList.add('hidden');
+        document.getElementById('likes-empty').classList.add('hidden');
+        document.getElementById('view-feed').classList.add('hidden');
+        document.getElementById('view-profile').classList.add('hidden');
+        
+        // Show chat
         document.getElementById('view-chat-room').classList.remove('hidden');
         document.getElementById('bottom-nav').classList.add('hidden');
         
@@ -756,9 +861,10 @@
     window.closeChat = function() {
         currentChatUser = null;
         document.getElementById('view-chat-room').classList.add('hidden');
-        document.getElementById('view-chats').classList.remove('hidden');
         document.getElementById('bottom-nav').classList.remove('hidden');
-        loadChats();
+        
+        // Return to the tab user was on before chat
+        switchTab(activeTab === 'feed' ? 'chats' : activeTab);
     }
 
     async function loadMessages() {
