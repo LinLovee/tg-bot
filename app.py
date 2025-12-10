@@ -6,12 +6,15 @@ import hashlib
 import hmac
 import time
 from datetime import datetime, timedelta
-from functools import wraps
+from functools import wraps, lru_cache
 import psycopg
+from psycopg import pool
 from psycopg.rows import dict_row
 import base64
 import logging
 import random
+from threading import Thread
+import io
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
@@ -25,10 +28,54 @@ PHOTO_DIR = 'photos'
 if not os.path.exists(PHOTO_DIR):
     os.makedirs(PHOTO_DIR, exist_ok=True)
 
-def get_db_connection():
+# ✅ CONNECTION POOL - одна из самых важных оптимизаций!
+connection_pool = None
+
+def init_connection_pool():
+    global connection_pool
     if not DATABASE_URL:
         raise ValueError("DATABASE_URL is not set")
-    return psycopg.connect(DATABASE_URL, row_factory=dict_row)
+    connection_pool = psycopg.pool.SimpleConnectionPool(
+        min_size=2,
+        max_size=10,
+        conninfo=DATABASE_URL,
+        row_factory=dict_row
+    )
+
+def get_db_connection():
+    global connection_pool
+    if connection_pool is None:
+        init_connection_pool()
+    return connection_pool.getconn()
+
+def return_db_connection(conn):
+    global connection_pool
+    if connection_pool and conn:
+        connection_pool.putconn(conn)
+
+# ✅ КЭШИРОВАНИЕ тегов (они почти никогда не меняются)
+_tags_cache = None
+_tags_cache_time = 0
+
+def get_tags_cached(force_refresh=False):
+    global _tags_cache, _tags_cache_time
+    current_time = time.time()
+    
+    # Обновляем кэш каждые 1 час или если принудительно попросили
+    if force_refresh or _tags_cache is None or (current_time - _tags_cache_time) > 3600:
+        try:
+            conn = get_db_connection()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute('SELECT id, name, emoji FROM tags ORDER BY name')
+                    _tags_cache = cur.fetchall()
+                    _tags_cache_time = current_time
+            finally:
+                return_db_connection(conn)
+        except:
+            _tags_cache = []
+    
+    return _tags_cache or []
 
 def execute_query(query, params=(), fetch_one=False, fetch_all=False, commit=False):
     conn = get_db_connection()
@@ -52,11 +99,14 @@ def execute_query(query, params=(), fetch_one=False, fetch_all=False, commit=Fal
                 
             return result
     except Exception as e:
-        conn.rollback()
+        try:
+            conn.rollback()
+        except:
+            pass
         print(f"Database error: {e}")
         raise e
     finally:
-        conn.close()
+        return_db_connection(conn)
 
 def safe_execute(query, params=()):
     conn = get_db_connection()
@@ -70,10 +120,33 @@ def safe_execute(query, params=()):
             conn.commit()
             return True
     except Exception as e:
-        conn.rollback()
+        try:
+            conn.rollback()
+        except:
+            pass
         return False
     finally:
-        conn.close()
+        return_db_connection(conn)
+
+# ✅ АСИНХРОННОЕ сохранение фотографий
+def save_photo_async(user_id, photo_base64):
+    def _save():
+        try:
+            if ',' in photo_base64:
+                photo_base64_clean = photo_base64.split(',')[1]
+            else:
+                photo_base64_clean = photo_base64
+            
+            photo_bytes = base64.b64decode(photo_base64_clean)
+            photo_path = os.path.join(PHOTO_DIR, f'{user_id}_profile.jpg')
+            
+            with open(photo_path, 'wb') as f:
+                f.write(photo_bytes)
+        except Exception as e:
+            print(f"Photo save error: {e}")
+    
+    thread = Thread(target=_save, daemon=True)
+    thread.start()
 
 def init_db():
     conn = get_db_connection()
@@ -99,12 +172,33 @@ def init_db():
                 ''')
                 conn.commit()
             except Exception as e:
-                conn.rollback()
+                try:
+                    conn.rollback()
+                except:
+                    pass
             
             safe_execute('ALTER TABLE users ADD COLUMN photo_url TEXT')
             safe_execute('ALTER TABLE users ADD COLUMN is_premium BOOLEAN DEFAULT FALSE')
             safe_execute('ALTER TABLE users ADD COLUMN daily_likes_used INTEGER DEFAULT 0')
             safe_execute('ALTER TABLE users ADD COLUMN last_like_reset TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+            
+            # ✅ СОЗДАНИЕ ИНДЕКСОВ для быстрых запросов
+            try:
+                c.execute('CREATE INDEX IF NOT EXISTS idx_users_city ON users(city)')
+                c.execute('CREATE INDEX IF NOT EXISTS idx_users_age ON users(age)')
+                c.execute('CREATE INDEX IF NOT EXISTS idx_likes_from_user ON likes(from_user)')
+                c.execute('CREATE INDEX IF NOT EXISTS idx_likes_to_user ON likes(to_user)')
+                c.execute('CREATE INDEX IF NOT EXISTS idx_chats_users ON chats(user1_id, user2_id)')
+                c.execute('CREATE INDEX IF NOT EXISTS idx_messages_chat_id ON messages(chat_id)')
+                c.execute('CREATE INDEX IF NOT EXISTS idx_user_tags_user_id ON user_tags(user_id)')
+                conn.commit()
+                print("✅ Indexes created")
+            except Exception as e:
+                try:
+                    conn.rollback()
+                except:
+                    pass
+                print(f"Index creation note: {e}")
             
             # Migration: Drop old likes table constraints and recreate with CASCADE
             try:
@@ -115,7 +209,10 @@ def init_db():
                 conn.commit()
                 print("✅ Updated likes table constraints")
             except Exception as e:
-                conn.rollback()
+                try:
+                    conn.rollback()
+                except:
+                    pass
                 print(f"Likes migration note: {e}")
             
             # Migration: Drop old chats table constraints and recreate with CASCADE
@@ -127,7 +224,10 @@ def init_db():
                 conn.commit()
                 print("✅ Updated chats table constraints")
             except Exception as e:
-                conn.rollback()
+                try:
+                    conn.rollback()
+                except:
+                    pass
                 print(f"Chats migration note: {e}")
             
             # Migration: Fix messages table to add CASCADE for from_user and chat_id
@@ -139,7 +239,10 @@ def init_db():
                 conn.commit()
                 print("✅ Updated messages table constraints")
             except Exception as e:
-                conn.rollback()
+                try:
+                    conn.rollback()
+                except:
+                    pass
                 print(f"Messages migration note: {e}")
             
             # Migration: Fix user_tags table to add CASCADE for user_id and tag_id
@@ -151,7 +254,10 @@ def init_db():
                 conn.commit()
                 print("✅ Updated user_tags table constraints")
             except Exception as e:
-                conn.rollback()
+                try:
+                    conn.rollback()
+                except:
+                    pass
                 print(f"User_tags migration note: {e}")
             
             try:
@@ -168,7 +274,10 @@ def init_db():
                 ''')
                 conn.commit()
             except Exception as e:
-                conn.rollback()
+                try:
+                    conn.rollback()
+                except:
+                    pass
             
             try:
                 c.execute('''
@@ -184,7 +293,10 @@ def init_db():
                 ''')
                 conn.commit()
             except Exception as e:
-                conn.rollback()
+                try:
+                    conn.rollback()
+                except:
+                    pass
             
             try:
                 c.execute('''
@@ -196,7 +308,10 @@ def init_db():
                 ''')
                 conn.commit()
             except Exception as e:
-                conn.rollback()
+                try:
+                    conn.rollback()
+                except:
+                    pass
             
             try:
                 c.execute('SELECT COUNT(*) as cnt FROM tags')
@@ -223,7 +338,10 @@ def init_db():
                             pass
                     conn.commit()
             except:
-                conn.rollback()
+                try:
+                    conn.rollback()
+                except:
+                    pass
             
             try:
                 c.execute('''
@@ -237,19 +355,23 @@ def init_db():
                 ''')
                 conn.commit()
             except:
-                conn.rollback()
+                try:
+                    conn.rollback()
+                except:
+                    pass
             
             print("✅ Database is ready!")
     except Exception as e:
         print(f"Init DB error: {e}")
     finally:
-        conn.close()
+        return_db_connection(conn)
 
 try:
     if DATABASE_URL:
         init_db()
-except:
-    pass
+        get_tags_cached()  # Предзагружаем теги в памяти
+except Exception as e:
+    print(f"Init error: {e}")
 
 def reset_daily_likes(user_id):
     try:
@@ -263,7 +385,8 @@ def reset_daily_likes(user_id):
 
 @app.route('/api/tags', methods=['GET'])
 def get_tags():
-    tags = execute_query('SELECT id, name, emoji FROM tags ORDER BY name', fetch_all=True)
+    # ✅ Используем кэшированные теги
+    tags = get_tags_cached()
     return jsonify(tags or [])
 
 @app.route('/api/user/<int:user_id>', methods=['GET'])
@@ -313,10 +436,17 @@ def delete_user(user_id):
         # CASCADE will automatically delete chats, messages, likes, user_tags
         execute_query('DELETE FROM users WHERE id = ?', (user_id,), commit=True)
         
-        # Delete photo file
-        photo_path = os.path.join(PHOTO_DIR, f'{user_id}_profile.jpg')
-        if os.path.exists(photo_path):
-            os.remove(photo_path)
+        # Delete photo file асинхронно
+        def delete_photo():
+            photo_path = os.path.join(PHOTO_DIR, f'{user_id}_profile.jpg')
+            try:
+                if os.path.exists(photo_path):
+                    os.remove(photo_path)
+            except:
+                pass
+        
+        thread = Thread(target=delete_photo, daemon=True)
+        thread.start()
         
         return jsonify({'success': True})
     except Exception as e:
@@ -332,6 +462,7 @@ def get_profiles(user_id):
         
         reset_daily_likes(user_id)
         
+        # ✅ ОДИНОЧНЫЙ запрос вместо N+1
         interacted = execute_query('SELECT to_user FROM likes WHERE from_user = ?', (user_id,), fetch_all=True)
         interacted_ids = [row['to_user'] for row in (interacted or [])] + [user_id]
         
@@ -344,16 +475,39 @@ def get_profiles(user_id):
         else:
             params = tuple(interacted_ids) + (age_min, age_max)
         
-        query = f'SELECT id, name, age, city, bio, photo_url FROM users {where_clause} ORDER BY RANDOM() LIMIT 50'
+        # ✅ Получаем профили с тегами в одном JOIN запросе
+        query = f'''
+            SELECT DISTINCT 
+                users.id, users.name, users.age, users.city, users.bio, users.photo_url
+            FROM users
+            LEFT JOIN user_tags ON users.id = user_tags.user_id
+            {where_clause}
+            ORDER BY RANDOM() 
+            LIMIT 50
+        '''
         profiles = execute_query(query, params, fetch_all=True)
         
-        for profile in (profiles or []):
-            tags = execute_query('''
-                SELECT t.id, t.name, t.emoji FROM user_tags ut
+        # ✅ Получаем все теги для этих профилей ОДНИМ запросом
+        if profiles:
+            profile_ids = [p['id'] for p in profiles]
+            tags_query = f'''
+                SELECT user_id, id, name, emoji FROM user_tags ut
                 JOIN tags t ON ut.tag_id = t.id
-                WHERE ut.user_id = ?
-            ''', (profile['id'],), fetch_all=True)
-            profile['tags'] = tags or []
+                WHERE ut.user_id IN ({", ".join(["%s"] * len(profile_ids))})
+            '''
+            all_tags = execute_query(tags_query, tuple(profile_ids), fetch_all=True)
+            
+            # Создаём маппинг тегов по user_id
+            tags_by_user = {}
+            for tag in (all_tags or []):
+                user_id_tag = tag['user_id']
+                if user_id_tag not in tags_by_user:
+                    tags_by_user[user_id_tag] = []
+                tags_by_user[user_id_tag].append({'id': tag['id'], 'name': tag['name'], 'emoji': tag['emoji']})
+            
+            # Присваиваем теги профилям
+            for profile in profiles:
+                profile['tags'] = tags_by_user.get(profile['id'], [])
         
         return jsonify(profiles or [])
     except Exception as e:
@@ -408,25 +562,25 @@ def get_likes(user_id):
 @app.route('/api/chats/<int:user_id>', methods=['GET'])
 def get_chats(user_id):
     try:
+        # ✅ Всё в одном запросе - очень важно!
         chats = execute_query('''
             SELECT 
                 CASE WHEN user1_id = %s THEN user2_id ELSE user1_id END as user_id,
                 u.name as user_name,
                 u.photo_url as user_photo,
                 c.id as chat_id,
-                c.created_at
+                c.created_at,
+                (SELECT text FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message
             FROM chats c
             JOIN users u ON (CASE WHEN c.user1_id = %s THEN c.user2_id ELSE c.user1_id END) = u.id
             WHERE c.user1_id = %s OR c.user2_id = %s
             ORDER BY c.created_at DESC
         ''', (user_id, user_id, user_id, user_id), fetch_all=True)
         
-        # Get last message for each chat
+        # Обрабатываем null сообщения
         for chat in (chats or []):
-            last_msg = execute_query('''
-                SELECT text FROM messages WHERE chat_id = ? ORDER BY created_at DESC LIMIT 1
-            ''', (chat['chat_id'],), fetch_one=True)
-            chat['last_message'] = last_msg['text'] if last_msg else 'Начни разговор...'
+            if not chat['last_message']:
+                chat['last_message'] = 'Начни разговор...'
         
         return jsonify(chats or [])
     except Exception as e:
@@ -482,18 +636,14 @@ def upload_photo():
     try:
         user_id = data['user_id']
         photo_base64 = data['photo_data']
-        photo_filename = f'{user_id}_profile.jpg'
-        photo_path = os.path.join(PHOTO_DIR, photo_filename)
         
-        if ',' in photo_base64:
-            photo_base64 = photo_base64.split(',')[1]
-        
-        photo_bytes = base64.b64decode(photo_base64)
-        with open(photo_path, 'wb') as f:
-            f.write(photo_bytes)
-        
+        # ✅ Обновляем БД сразу (файл сохранится асинхронно)
         photo_url = f'/api/photo/{user_id}'
         execute_query('UPDATE users SET photo_url = ? WHERE id = ?', (photo_url, user_id), commit=True)
+        
+        # ✅ Сохраняем файл в отдельном потоке
+        save_photo_async(user_id, photo_base64)
+        
         return jsonify({'success': True, 'photo_url': photo_url})
     except Exception as e:
         print(f"Photo upload error: {e}")
@@ -523,6 +673,11 @@ def not_found(e):
     if not request.path.startswith('/api/'):
         return send_file('index.html')
     return jsonify({'error': 'Not found'}), 404
+
+def close_connection_pool():
+    global connection_pool
+    if connection_pool:
+        connection_pool.closeall()
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
