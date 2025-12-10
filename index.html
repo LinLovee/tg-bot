@@ -270,7 +270,7 @@
             <div id="view-chats" class="list-container hidden"></div>
             <div id="chats-empty" class="empty-view hidden">
                 <div class="empty-icon">📬</div>
-                <div>Нет сообщений</div>
+                <div>У вас пока нет чатов</div>
             </div>
 
             <!-- 4. PROFILE -->
@@ -380,13 +380,17 @@
             if(tab === 'chats') document.getElementById('tab-chats')?.classList.add('active');
             if(tab === 'profile') document.getElementById('tab-profile')?.classList.add('active');
 
-            // View Toggles
-            ['view-feed', 'view-likes', 'view-chats', 'view-profile', 'view-chat-room'].forEach(id => {
-                document.getElementById(id).classList.add('hidden');
-            });
-            const viewId = 'view-' + (tab === 'chat-room' ? 'chats' : tab);
-            document.getElementById(viewId).classList.remove('hidden');
+            // HIDE ALL VIEWS AND EMPTY STATES FIRST
+            const allViews = [
+                'view-feed', 'feed-empty',
+                'view-likes', 'likes-empty',
+                'view-chats', 'chats-empty',
+                'view-profile',
+                'view-chat-room'
+            ];
+            allViews.forEach(id => document.getElementById(id)?.classList.add('hidden'));
 
+            // Show base containers
             if(tab === 'feed') {
                 document.getElementById('view-feed').classList.remove('hidden');
                 document.getElementById('filter-btn').classList.remove('hidden');
@@ -400,10 +404,12 @@
                 document.getElementById('view-likes').classList.remove('hidden');
                 loadLikes();
             }
+
             if(tab === 'chats') {
                 document.getElementById('view-chats').classList.remove('hidden');
                 loadChats();
             }
+
             if(tab === 'profile') {
                 document.getElementById('view-profile').classList.remove('hidden');
                 renderProfileSelf();
@@ -434,12 +440,15 @@
         const feedContent = document.getElementById('feed-content');
         const feedActions = document.getElementById('feed-actions');
         const feedEmpty = document.getElementById('feed-empty');
+        const viewFeed = document.getElementById('view-feed');
         
         if (!profiles[currentProfileIdx]) {
             feedPhotoLayer.classList.add('hidden');
             feedContent.classList.add('hidden');
             feedActions.classList.add('hidden');
             feedEmpty.classList.remove('hidden');
+            // Ensure container is shown (handled by switchTab but double check)
+            viewFeed.classList.remove('hidden');
             return;
         }
 
@@ -576,7 +585,7 @@
     window.renderProfileSelf = function() {
         try {
             if(!user) return;
-            document.getElementById('my-photo').src = user.photo_url;
+            document.getElementById('my-photo').src = user.photo_url || '';
             document.getElementById('my-name').textContent = `${user.name}, ${user.age}`;
             document.getElementById('my-bio').textContent = user.bio || '';
         } catch(e) { console.error(e); }
@@ -610,10 +619,12 @@
             container.innerHTML = '';
             
             if(!list.length) {
+                container.classList.add('hidden');
                 empty.classList.remove('hidden');
                 return;
             }
             empty.classList.add('hidden');
+            container.classList.remove('hidden');
 
             list.forEach(l => {
                 container.innerHTML += `
@@ -660,10 +671,12 @@
             container.innerHTML = '';
             
             if(!chats.length) {
+                container.classList.add('hidden');
                 empty.classList.remove('hidden');
                 return;
             }
             empty.classList.add('hidden');
+            container.classList.remove('hidden');
             document.getElementById('badge-chats').textContent = chats.length;
             document.getElementById('badge-chats').classList.remove('hidden');
 
@@ -684,6 +697,7 @@
     window.openChat = function(id, name, photo) {
         currentChatUser = id;
         document.getElementById('view-chats').classList.add('hidden');
+        document.getElementById('chats-empty').classList.add('hidden'); // ensure empty is hidden
         document.getElementById('view-chat-room').classList.remove('hidden');
         document.getElementById('bottom-nav').classList.add('hidden');
         
