@@ -19,18 +19,37 @@
             color: var(--text); min-height: 100vh; padding-bottom: env(safe-area-inset-bottom);
             -webkit-font-smoothing: antialiased; overscroll-behavior: none;
         }
-        .app-shell { position: fixed; inset: 0; display: flex; flex-direction: column;
-            padding: 12px 12px calc(12px + env(safe-area-inset-bottom)); gap: 12px;
-            max-width: 540px; margin: 0 auto;
+        .hidden { display: none !important; }
+
+        /* Setup Screen (First Launch) */
+        .setup-screen {
+            position: fixed; inset: 0; z-index: 200; background: var(--bg);
+            padding: 20px; overflow-y: auto; display: flex; flex-direction: column;
+            padding-bottom: 50px;
         }
+        .setup-content {
+            background: var(--glass); border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 24px; padding: 24px; margin-top: 20px;
+            backdrop-filter: blur(20px);
+        }
+
+        /* Main App Shell */
+        .app-shell {
+            position: fixed; inset: 0; display: flex; flex-direction: column;
+            padding: 12px 12px calc(12px + env(safe-area-inset-bottom)); gap: 12px;
+            max-width: 540px; margin: 0 auto; z-index: 10;
+        }
+
+        /* Top Bar */
         .glass-panel {
             border-radius: 28px;
             background: radial-gradient(circle at top left, rgba(248, 113, 113, 0.16), transparent 55%),
                         radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.16), transparent 55%), var(--glass);
             border: 1px solid rgba(148, 163, 184, 0.34); box-shadow: var(--shadow-strong);
             backdrop-filter: blur(26px) saturate(180%); -webkit-backdrop-filter: blur(26px) saturate(180%);
+            flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;
         }
-        .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 10px; gap: 10px; }
+        .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 10px; gap: 10px; flex-shrink: 0; }
         .top-title { display: flex; align-items: center; gap: 10px; }
         .top-logo {
             width: 30px; height: 30px; border-radius: 999px;
@@ -41,828 +60,652 @@
         }
         .top-text-main { font-size: 16px; font-weight: 600; letter-spacing: 0.02em; }
         .top-text-sub { font-size: 12px; color: var(--text-muted); }
-        .pill-online { padding: 6px 10px; border-radius: 999px; background: rgba(22, 163, 74, 0.16);
-            border: 1px solid rgba(74, 222, 128, 0.5); display: flex; align-items: center; gap: 6px; font-size: 11px; }
-        .pill-dot { width: 7px; height: 7px; border-radius: 999px; background: #22c55e;
-            box-shadow: 0 0 10px rgba(34, 197, 94, 0.9); }
-        .screen-container { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .action-icon-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 18px; transition: all 0.2s; color: var(--text); }
+        .action-icon-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        /* Filters Panel */
+        .filters-panel {
+            background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 16px; display: none; flex-direction: column; gap: 12px;
+        }
+        .filters-panel.visible { display: flex; }
+        .filter-row { display: flex; gap: 12px; }
+        .filter-input { flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(148, 163, 184, 0.3);
+            color: white; padding: 8px 12px; border-radius: 8px; font-size: 14px; }
+
+        /* Main Content Area */
+        .screen-container { flex: 1; position: relative; overflow: hidden; }
+
+        /* Feed Card 9:16 */
         .feed-frame {
-            width: 100%; max-width: 430px; aspect-ratio: 9 / 16; border-radius: 32px; position: relative; overflow: hidden;
-            background: radial-gradient(circle at top, rgba(248, 113, 113, 0.24), transparent 55%),
-                        radial-gradient(circle at bottom, rgba(37, 99, 235, 0.24), transparent 55%), #020617;
-            border: 1px solid rgba(148, 163, 184, 0.45); box-shadow: 0 22px 60px rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(30px) saturate(190%); -webkit-backdrop-filter: blur(30px) saturate(190%);
+            width: 100%; height: 100%; position: relative; overflow: hidden;
         }
         .feed-photo-layer { position: absolute; inset: 0; overflow: hidden; }
-        .feed-photo { width: 100%; height: 100%; object-fit: cover; transform-origin: center;
-            transform: scale(1.04); filter: saturate(1.08) contrast(1.08); }
-        .feed-gradient-top { position: absolute; inset: 0 0 65%; 
-            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.86), transparent 85%); pointer-events: none; }
-        .feed-gradient-bottom { position: absolute; inset: 55% 0 0;
-            background: linear-gradient(to top, rgba(15, 23, 42, 0.96), transparent 70%); pointer-events: none; }
-        .feed-top-meta { position: absolute; inset: 0; padding: 16px 16px 0; display: flex;
-            justify-content: space-between; align-items: flex-start; color: #e5e7eb; font-size: 13px; pointer-events: none; }
-        .age-pill { padding: 6px 11px; border-radius: 999px; background: rgba(31, 41, 55, 0.8);
-            border: 1px solid rgba(148, 163, 184, 0.7); display: flex; align-items: center; gap: 6px;
-            box-shadow: 0 12px 25px rgba(15, 23, 42, 0.8); }
-        .age-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--accent); }
-        .feed-main-meta { position: absolute; left: 16px; right: 16px; bottom: 120px;
-            display: flex; flex-direction: column; gap: 8px; color: #f9fafb; }
-        .name-row { display: flex; align-items: baseline; gap: 8px; }
-        .name-main { font-size: 22px; font-weight: 700; letter-spacing: 0.01em; }
-        .city-tag { padding: 6px 9px; border-radius: 999px; background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(148, 163, 184, 0.5); font-size: 11px; display: inline-flex;
-            align-items: center; gap: 6px; }
-        .bio-text { font-size: 13px; color: #e5e7eb; max-width: 90%; text-shadow: 0 10px 35px rgba(15, 23, 42, 0.9); }
-        .chips-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
-        .chip { padding: 5px 9px; border-radius: 999px; background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(148, 163, 184, 0.65); font-size: 11px; display: inline-flex;
-            align-items: center; gap: 4px; }
-        .chip-accent { background: rgba(244, 63, 94, 0.18); border-color: rgba(248, 113, 113, 0.85); }
-        .actions-row { position: absolute; left: 0; right: 0; bottom: 0;
-            padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); display: flex;
-            flex-direction: column; gap: 10px; }
-        .swipe-hint { display: flex; justify-content: center; font-size: 11px; color: var(--text-muted); gap: 6px; }
-        .actions-buttons { display: flex; align-items: center; justify-content: center; gap: 26px; }
-        .circle-btn { width: 74px; height: 74px; border-radius: 999px; border: none; outline: none;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-            transition: transform 0.16s ease-out, box-shadow 0.16s ease-out, background 0.18s;
-            box-shadow: var(--shadow-soft); backdrop-filter: blur(22px) saturate(160%);
-            -webkit-backdrop-filter: blur(22px) saturate(160%); }
-        .circle-like {
-            background: radial-gradient(circle at 30% 20%, #f97316, transparent 55%),
-                        radial-gradient(circle at 70% 80%, #f43f5e, transparent 55%), rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(248, 113, 113, 0.85); color: #f9fafb; font-size: 30px;
+        .feed-photo { width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); }
+        .feed-gradient-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, transparent 30%, transparent 60%, rgba(0,0,0,0.95) 100%); pointer-events: none; }
+        
+        .feed-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; padding-bottom: 80px; pointer-events: none; }
+        .feed-name { font-size: 28px; font-weight: 800; margin-bottom: 6px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .feed-location { font-size: 14px; opacity: 0.9; margin-bottom: 12px; display: flex; align-items: center; gap: 4px; }
+        .feed-bio { font-size: 15px; line-height: 1.4; opacity: 0.9; margin-bottom: 12px; max-width: 90%; }
+        .feed-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .feed-tag { background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+
+        /* Floating Action Buttons */
+        .actions-float {
+            position: absolute; bottom: 20px; left: 0; right: 0;
+            display: flex; justify-content: center; gap: 30px; pointer-events: auto;
         }
-        .circle-dislike { background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.7);
-            color: #e5e7eb; font-size: 26px; }
-        .circle-btn:active { transform: scale(0.9); box-shadow: 0 6px 18px rgba(15, 23, 42, 0.85); }
-        .mini-btn { width: 48px; height: 48px; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.6);
-            background: rgba(15, 23, 42, 0.9); display: flex; align-items: center; justify-content: center;
-            color: #e5e7eb; font-size: 20px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.9); }
+        .circle-btn {
+            width: 64px; height: 64px; border-radius: 50%; border: none;
+            display: flex; align-items: center; justify-content: center; font-size: 28px;
+            cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.1s;
+        }
+        .circle-btn:active { transform: scale(0.9); }
+        .btn-dislike { background: #1e293b; color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.3); }
+        .btn-like { background: linear-gradient(135deg, #ff4b8b, #ff8a80); color: white; border: none; box-shadow: 0 10px 30px rgba(255, 75, 139, 0.4); }
+
+        /* Bottom Nav */
         .bottom-nav-glass { margin-top: auto; padding: 8px 12px; }
-        .bottom-nav-inner { border-radius: 22px;
-            background: radial-gradient(circle at top, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.96));
-            border: 1px solid rgba(15, 23, 42, 0.9); display: flex; align-items: center;
-            justify-content: space-between; padding: 6px 10px; box-shadow: 0 16px 40px rgba(15, 23, 42, 1);
-            backdrop-filter: blur(32px) saturate(190%); -webkit-backdrop-filter: blur(32px) saturate(190%); }
-        .nav-pill-toggle { display: inline-flex; padding: 3px; border-radius: 999px;
-            background: rgba(15, 23, 42, 0.96); border: 1px solid rgba(51, 65, 85, 0.9); }
-        .segmented-item { border-radius: 999px; padding: 5px 11px; display: flex; align-items: center;
-            gap: 6px; font-size: 11px; color: var(--text-muted); cursor: pointer;
-            transition: background 0.18s, color 0.18s, transform 0.16s; }
-        .segmented-item.active { background: linear-gradient(135deg, rgba(248, 113, 113, 0.35), rgba(251, 113, 133, 0.75)); color: #0f172a; }
-        .segmented-dot { width: 4px; height: 4px; border-radius: 999px; background: currentColor; }
-        .nav-icon-btn { width: 32px; height: 32px; border-radius: 999px; border: 1px solid rgba(51, 65, 85, 0.95);
-            display: flex; align-items: center; justify-content: center; font-size: 16px; color: #e5e7eb;
-            background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 1));
-            cursor: pointer; transition: transform 0.16s, box-shadow 0.18s, background 0.18s; }
-        .nav-icon-btn:active { transform: scale(0.9); box-shadow: 0 10px 26px rgba(15, 23, 42, 0.9); }
-        .nav-badge { position: absolute; top: -3px; right: -3px; min-width: 14px; height: 14px;
-            border-radius: 999px; background: #f97316; color: #0f172a; font-size: 10px; display: flex;
-            align-items: center; justify-content: center; font-weight: 600;
-            box-shadow: 0 0 12px rgba(248, 113, 113, 0.95); }
-        .nav-icon-wrapper { position: relative; }
-        .hidden { display: none !important; }
-        
-        /* Setup & Profile Forms */
-        .setup-container { padding: 20px; overflow-y: auto; max-height: 100%; }
-        .setup-form { background: var(--glass); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        .setup-title { text-align: center; font-size: 24px; margin-bottom: 20px; }
-        .photo-upload { position: relative; width: 150px; height: 150px; margin: 0 auto 20px;
-            border: 2px dashed rgba(148, 163, 184, 0.5); border-radius: 16px; display: flex;
-            align-items: center; justify-content: center; cursor: pointer; background: rgba(15, 23, 42, 0.5);
-            transition: all 0.3s; }
-        .photo-upload:hover { border-color: var(--accent); background: rgba(15, 23, 42, 0.7); }
-        .photo-upload img { max-width: 100%; max-height: 100%; border-radius: 14px; object-fit: cover; }
-        .photo-upload input[type="file"] { display: none; }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
-        .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid rgba(148, 163, 184, 0.3);
-            border-radius: 12px; background: rgba(15, 23, 42, 0.6); color: var(--text); font-family: inherit; font-size: 16px; }
-        .form-group textarea { resize: vertical; min-height: 100px; }
-        .tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-        .tag { padding: 8px 12px; border: 2px solid rgba(148, 163, 184, 0.3); border-radius: 20px;
-            background: rgba(15, 23, 42, 0.6); color: var(--text); cursor: pointer;
-            transition: all 0.2s; font-size: 13px; }
-        .tag.selected { background: var(--accent); color: white; border-color: var(--accent); }
-        .btn { padding: 12px 16px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600;
-            cursor: pointer; transition: all 0.2s; width: 100%; }
-        .btn-primary { background: linear-gradient(135deg, var(--accent), #ff8a80); color: white;
-            box-shadow: 0 4px 12px rgba(255, 90, 95, 0.3); }
-        .btn-primary:active { transform: scale(0.98); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-secondary { background: rgba(15, 23, 42, 0.8); color: var(--text); border: 1px solid rgba(148, 163, 184, 0.3); margin-top: 8px; }
-        .btn-danger { background: #ff3b30; color: white; margin-top: 12px; }
-        
-        /* Empty State */
-        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
-        .empty-state-emoji { font-size: 48px; margin-bottom: 12px; }
-        
-        /* Likes List */
-        .likes-container { display: flex; flex-direction: column; gap: 12px; padding: 20px; overflow-y: auto; max-height: 100%; }
-        .like-card { background: var(--glass); border-radius: 16px; padding: 12px; display: flex; gap: 12px;
-            align-items: flex-start; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.5); }
-        .like-card:active { transform: scale(0.98); }
-        .like-photo { width: 80px; height: 80px; background: rgba(148, 163, 184, 0.2); border-radius: 12px;
-            object-fit: cover; flex-shrink: 0; cursor: pointer; }
-        .like-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .like-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-        .like-name { font-weight: 600; font-size: 16px; cursor: pointer; }
-        .like-badge { background: var(--accent); color: white; padding: 2px 6px; border-radius: 6px;
-            font-size: 10px; font-weight: 600; }
-        .like-location { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
-        .like-actions { display: flex; gap: 8px; }
-        .like-actions .btn { padding: 8px 12px; font-size: 13px; min-width: 50px; margin: 0; }
-        .btn-small-primary { background: linear-gradient(135deg, var(--success), #81c784); color: white; }
-        .btn-small-secondary { background: #ff6b6b; color: white; }
-        
-        /* Chat List */
-        .chat-container { padding: 20px; overflow-y: auto; max-height: 100%; }
-        .chat-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-        .chat-item { background: var(--glass); border-radius: 12px; padding: 12px; cursor: pointer;
-            transition: all 0.2s; }
-        .chat-item:active { background: rgba(15, 23, 42, 0.85); }
-        .chat-header-item { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-        .chat-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: white;
-            display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 18px; }
-        .chat-info { flex: 1; }
-        .chat-name { font-weight: 600; font-size: 14px; }
-        .chat-preview { font-size: 12px; color: var(--text-muted); overflow: hidden;
-            text-overflow: ellipsis; white-space: nowrap; }
-        
-        /* Chat Detail */
-        .chat-detail-container { display: flex; flex-direction: column; height: 100%; padding: 20px; }
-        .chat-back-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text); margin-bottom: 16px; }
-        .messages-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 8px 0; }
-        .message { padding: 12px 16px; border-radius: 16px; max-width: 85%; word-wrap: break-word; }
-        .message.own { align-self: flex-end; background: var(--accent); color: white; }
-        .message.other { align-self: flex-start; background: var(--glass); color: var(--text); }
-        .message-time { font-size: 11px; opacity: 0.7; margin-top: 4px; }
-        .message-input-row { display: flex; gap: 8px; background: var(--glass); padding: 12px;
-            border-radius: 12px; margin-top: 12px; }
-        .message-input-row input { flex: 1; border: none; background: rgba(15, 23, 42, 0.6);
-            color: var(--text); padding: 10px; border-radius: 8px; font-size: 14px; }
-        .message-send-btn { background: var(--accent); color: white; border: none; border-radius: 8px;
-            width: 44px; height: 44px; cursor: pointer; display: flex; align-items: center;
-            justify-content: center; font-size: 18px; }
-        
-        /* Profile View */
-        .profile-container { padding: 20px; overflow-y: auto; max-height: 100%; }
-        .profile-card { background: var(--glass); border-radius: 20px; padding: 20px; }
-        .profile-photo-section { text-align: center; margin-bottom: 20px; }
-        .profile-photo-section img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover;
-            margin-bottom: 16px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.5); }
-        .profile-photo-section h2 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-        .profile-photo-section p { color: var(--text-muted); margin: 4px 0 16px; }
-        .profile-section-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-        .profile-bio { margin-bottom: 16px; line-height: 1.5; }
-        .btn-group { display: flex; gap: 8px; margin-top: 12px; }
-        .btn-group .btn { flex: 1; margin: 0; }
-        
-        @media (max-width: 400px) {
-            .feed-frame { border-radius: 26px; }
-            .circle-btn { width: 66px; height: 66px; }
+        .bottom-nav-inner {
+            border-radius: 22px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(148, 163, 184, 0.2);
+            display: flex; align-items: center; justify-content: space-between; padding: 6px 10px;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
         }
+        .nav-toggle { background: rgba(0,0,0,0.3); border-radius: 20px; padding: 3px; display: flex; }
+        .nav-item { padding: 6px 14px; border-radius: 16px; font-size: 12px; color: #9ca3af; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .nav-item.active { background: rgba(255, 75, 139, 0.2); color: white; }
+        .nav-icons { display: flex; gap: 12px; }
+        .nav-icon { width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #cbd5e1; cursor: pointer; position: relative; }
+        .nav-icon.active { background: rgba(255,255,255,0.1); color: white; }
+        .badge { position: absolute; top: 0; right: 0; width: 14px; height: 14px; background: #ff4b8b; border-radius: 50%; font-size: 9px; display: flex; align-items: center; justify-content: center; color: white; }
+
+        /* Forms */
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: #cbd5e1; }
+        .form-input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.2); background: rgba(0,0,0,0.3); color: white; font-size: 16px; }
+        .form-textarea { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.2); background: rgba(0,0,0,0.3); color: white; font-size: 16px; min-height: 100px; resize: vertical; }
+        .photo-picker { width: 120px; height: 120px; border-radius: 24px; background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.2); margin: 0 auto 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; position: relative; }
+        .photo-picker img { width: 100%; height: 100%; object-fit: cover; }
+        .btn-primary { width: 100%; padding: 14px; border-radius: 14px; border: none; background: linear-gradient(135deg, #ff4b8b, #ff8a80); color: white; font-weight: 600; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        .btn-secondary { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: white; font-size: 14px; cursor: pointer; margin-top: 8px; }
+        .btn-danger { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(255, 59, 48, 0.3); background: rgba(255, 59, 48, 0.1); color: #ff3b30; font-size: 14px; cursor: pointer; margin-top: 24px; }
+
+        /* Likes & Chats Lists */
+        .list-container { padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; height: 100%; }
+        .list-item { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s; }
+        .list-item:active { background: rgba(255,255,255,0.1); }
+        .list-avatar { width: 50px; height: 50px; border-radius: 14px; background: #334155; object-fit: cover; }
+        .list-info { flex: 1; }
+        .list-title { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+        .list-sub { font-size: 13px; color: #94a3b8; }
+        .list-actions { display: flex; gap: 8px; }
+        .mini-btn { padding: 6px 12px; border-radius: 8px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .btn-accept { background: #4ade80; color: #022c22; }
+        .btn-reject { background: #fca5a5; color: #450a0a; }
+
+        /* Chat Detail */
+        .chat-view { display: flex; flex-direction: column; height: 100%; }
+        .chat-header { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; }
+        .chat-back { background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 4px; }
+        .messages-area { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+        .message-bubble { padding: 10px 14px; border-radius: 14px; max-width: 80%; font-size: 15px; line-height: 1.4; }
+        .msg-own { align-self: flex-end; background: var(--accent); color: white; border-bottom-right-radius: 4px; }
+        .msg-other { align-self: flex-start; background: rgba(255,255,255,0.1); color: white; border-bottom-left-radius: 4px; }
+        .chat-input-area { padding: 12px; background: rgba(0,0,0,0.3); display: flex; gap: 8px; }
+        .chat-input { flex: 1; background: rgba(255,255,255,0.1); border: none; padding: 10px 14px; border-radius: 20px; color: white; }
+        .chat-send { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); border: none; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+        /* Empty State */
+        .empty-view { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #94a3b8; text-align: center; padding: 20px; }
+        .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
     </style>
 </head>
 <body>
-<div class="app-shell">
-    <!-- Setup Section -->
-    <div id="setup-section" class="screen-container hidden">
-        <div class="setup-container">
-            <div class="setup-form">
-                <h2 class="setup-title">😍 Создай профиль</h2>
-                <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
-                    <img id="photoPreview" style="display: none;" />
-                    <div id="photoPlaceholder" style="text-align: center;">
-                        <div style="font-size: 32px; margin-bottom: 4px;">📸</div>
-                        <div style="font-size: 13px;">Загрузи фото</div>
-                    </div>
-                </div>
-                <input type="file" id="photoInput" accept="image/*" />
-                <div class="form-group"><label>✏️ Имя *</label><input type="text" id="setup-name" placeholder="Твоё имя" /></div>
-                <div class="form-group"><label>🎂 Возраст *</label><input type="number" id="setup-age" placeholder="18+" min="18" /></div>
-                <div class="form-group"><label>📍 Город *</label><input type="text" id="setup-city" placeholder="Твой город" /></div>
-                <div class="form-group"><label>💬 О себе *</label><textarea id="setup-bio" placeholder="Расскажи о себе..."></textarea></div>
-                <div class="form-group"><label>🎯 Интересы</label><div class="tags-container" id="setup-tags-container"></div></div>
-                <button id="create-btn" class="btn btn-primary" onclick="saveProfile()">✅ Создать</button>
+
+<!-- SETUP SCREEN (Visible ONLY if no profile) -->
+<div id="setup-screen" class="setup-screen hidden">
+    <h1 style="text-align: center; font-size: 28px; margin-top: 20px;">Добро пожаловать! 💕</h1>
+    <p style="text-align: center; color: var(--text-muted); font-size: 14px;">Создай анкету, чтобы начать знакомства</p>
+    
+    <div class="setup-content">
+        <div class="photo-picker" onclick="document.getElementById('setup-photo').click()">
+            <img id="preview-photo" style="display: none;" />
+            <div id="placeholder-photo" style="text-align: center;">
+                <span style="font-size: 24px;">📸</span>
+                <span style="font-size: 11px; display: block;">Добавить фото</span>
             </div>
         </div>
+        <input type="file" id="setup-photo" accept="image/*" style="display: none;" />
+        
+        <div class="form-group">
+            <label class="form-label">Имя</label>
+            <input type="text" id="input-name" class="form-input" placeholder="Как тебя зовут?" />
+        </div>
+        <div class="form-group" style="display: flex; gap: 12px;">
+            <div style="flex: 1;">
+                <label class="form-label">Возраст</label>
+                <input type="number" id="input-age" class="form-input" placeholder="18+" />
+            </div>
+            <div style="flex: 2;">
+                <label class="form-label">Город</label>
+                <input type="text" id="input-city" class="form-input" placeholder="Где ты?" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">О себе</label>
+            <textarea id="input-bio" class="form-textarea" placeholder="Расскажи что-нибудь интересное..."></textarea>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Интересы</label>
+            <div id="setup-tags" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+        </div>
+        
+        <button class="btn-primary" onclick="createProfile()">Создать анкету</button>
     </div>
+</div>
 
+<!-- MAIN APP (Visible ONLY after profile creation) -->
+<div id="main-app" class="app-shell hidden">
     <div class="glass-panel">
+        <!-- Top Header -->
         <div class="top-bar">
             <div class="top-title">
-                <div class="top-logo"><span>💗</span></div>
+                <div class="top-logo"><span>💕</span></div>
                 <div>
                     <div class="top-text-main">LinLove</div>
-                    <div class="top-text-sub">знакомства внутри Telegram</div>
+                    <div class="top-text-sub" id="status-text">поиск пары</div>
                 </div>
             </div>
-            <div class="pill-online"><div class="pill-dot"></div><span id="online-counter">—</span></div>
+            <button id="filter-btn" class="action-icon-btn hidden" onclick="toggleFilters()">⚡️</button>
         </div>
 
-        <div class="screen-container" id="main-screen">
-            <!-- Feed Section -->
-            <div id="feed-section" class="feed-frame">
+        <!-- Filters (Expandable) -->
+        <div id="filters-panel" class="filters-panel">
+            <div class="filter-row">
+                <input type="number" id="filter-age-min" class="filter-input" placeholder="От лет" />
+                <input type="number" id="filter-age-max" class="filter-input" placeholder="До лет" />
+            </div>
+            <input type="text" id="filter-city" class="filter-input" placeholder="Город..." />
+            <button class="btn-primary" style="margin-top: 0; padding: 8px;" onclick="applyFilters()">Применить</button>
+        </div>
+
+        <!-- CONTENT AREA -->
+        <div class="screen-container">
+            
+            <!-- 1. FEED -->
+            <div id="view-feed" class="feed-frame">
                 <div class="feed-photo-layer">
-                    <img id="feed-photo" class="feed-photo" src="" alt="profile" />
-                    <div class="feed-gradient-top"></div>
-                    <div class="feed-gradient-bottom"></div>
+                    <img id="card-photo" class="feed-photo" src="" />
+                    <div class="feed-gradient-overlay"></div>
                 </div>
-                <div class="feed-top-meta">
-                    <div class="age-pill"><div class="age-dot"></div><span id="feed-age">—</span></div>
+                <div class="feed-content">
+                    <div class="feed-name"><span id="card-name"></span>, <span id="card-age"></span></div>
+                    <div class="feed-location">📍 <span id="card-city"></span></div>
+                    <div class="feed-bio" id="card-bio"></div>
+                    <div class="feed-tags" id="card-tags"></div>
                 </div>
-                <div class="feed-main-meta">
-                    <div class="name-row">
-                        <div class="name-main" id="feed-name">—</div>
-                        <div class="city-tag" id="feed-city"><span>📍</span><span>—</span></div>
-                    </div>
-                    <div class="bio-text" id="feed-bio">—</div>
-                    <div class="chips-row" id="feed-tags"></div>
+                <div class="actions-float">
+                    <button class="circle-btn btn-dislike" onclick="swipe(false)">✕</button>
+                    <button class="circle-btn btn-like" onclick="swipe(true)">♥</button>
                 </div>
-                <div class="actions-row">
-                    <div class="swipe-hint"><span>Свайпай · влево — пропустить · вправо — лайк</span></div>
-                    <div class="actions-buttons">
-                        <button class="circle-btn circle-dislike" id="btn-dislike">👋</button>
-                        <button class="circle-btn circle-like" id="btn-like">♥</button>
-                    </div>
-                </div>
-                <div id="no-profiles" class="empty-state hidden"></div>
-            </div>
-            
-            <!-- Likes Section -->
-            <div id="likes-section" class="hidden">
-                <div class="likes-container" id="likes-container"></div>
-                <div id="no-likes" class="empty-state hidden">
-                    <div class="empty-state-emoji">😔</div>
-                    <div>Кто-то тебя лайкнул</div>
-                    <div style="font-size: 12px; margin-top: 8px;">Ответь лайком и напиши ему!</div>
+                <!-- Empty Feed -->
+                <div id="feed-empty" class="empty-view hidden">
+                    <div class="empty-icon">🌍</div>
+                    <div>Анкеты закончились</div>
+                    <div style="font-size: 12px; margin-top: 8px;">Попробуй изменить фильтры</div>
                 </div>
             </div>
-            
-            <!-- Messages Section -->
-            <div id="messages-section" class="hidden">
-                <div id="chat-list-view" class="chat-container">
-                    <div class="chat-list" id="chat-list"></div>
-                    <div id="no-chats" class="empty-state hidden">
-                        <div class="empty-state-emoji">📬</div>
-                        <div>Нет переписки</div>
-                    </div>
+
+            <!-- 2. LIKES -->
+            <div id="view-likes" class="list-container hidden"></div>
+            <div id="likes-empty" class="empty-view hidden">
+                <div class="empty-icon">💔</div>
+                <div>Пока нет лайков</div>
+            </div>
+
+            <!-- 3. CHATS -->
+            <div id="view-chats" class="list-container hidden"></div>
+            <div id="chats-empty" class="empty-view hidden">
+                <div class="empty-icon">📬</div>
+                <div>Нет сообщений</div>
+            </div>
+
+            <!-- 4. PROFILE -->
+            <div id="view-profile" class="list-container hidden">
+                <div style="text-align: center; margin-top: 20px;">
+                    <img id="my-photo" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent);" />
+                    <h2 id="my-name" style="margin-top: 10px; font-size: 24px;"></h2>
+                    <p id="my-bio" style="color: #94a3b8; margin-top: 6px; font-size: 14px; padding: 0 20px;"></p>
                 </div>
-                <div id="chat-detail-view" class="chat-detail-container hidden">
-                    <button class="chat-back-btn" onclick="backToChats()">← Назад</button>
-                    <div class="messages-list" id="messages-list"></div>
-                    <div class="message-input-row">
-                        <input type="text" id="message-input" placeholder="Написать..." />
-                        <button class="message-send-btn" onclick="sendMessage()">✈️</button>
-                    </div>
+                <div style="margin-top: 30px; padding: 0 20px;">
+                    <button class="btn-secondary" onclick="startEditProfile()">✏️ Редактировать профиль</button>
+                    <button class="btn-danger" onclick="deleteProfile()">🗑 Удалить анкету</button>
                 </div>
             </div>
-            
-            <!-- Profile Section -->
-            <div id="profile-section" class="hidden">
-                <div class="profile-container" id="profile-view-container"></div>
+
+            <!-- 5. CHAT ROOM -->
+            <div id="view-chat-room" class="chat-view hidden">
+                <div class="chat-header">
+                    <button class="chat-back" onclick="closeChat()">←</button>
+                    <img id="room-avatar" style="width: 32px; height: 32px; border-radius: 50%;" />
+                    <span id="room-name" style="font-weight: 600;"></span>
+                </div>
+                <div id="room-messages" class="messages-area"></div>
+                <div class="chat-input-area">
+                    <input type="text" id="room-input" class="chat-input" placeholder="Сообщение..." />
+                    <button class="chat-send" onclick="sendMsg()">➤</button>
+                </div>
             </div>
+
         </div>
     </div>
 
-    <div class="bottom-nav-glass" id="bottom-nav">
+    <!-- Bottom Navigation -->
+    <div id="bottom-nav" class="bottom-nav-glass">
         <div class="bottom-nav-inner">
-            <div class="nav-pill-toggle" id="nav-toggle">
-                <div class="segmented-item active" data-target="feed"><div class="segmented-dot"></div><span>Анкеты</span></div>
-                <div class="segmented-item" data-target="likes"><span>Лайки</span></div>
+            <div class="nav-toggle">
+                <div class="nav-item active" onclick="switchTab('feed')" id="tab-feed">Анкеты</div>
+                <div class="nav-item" onclick="switchTab('likes')" id="tab-likes">Лайки</div>
             </div>
-            <div style="display:flex;align-items:center;gap:10px;">
-                <div class="nav-icon-wrapper">
-                    <button class="nav-icon-btn" id="btn-messages">💬</button>
-                    <div class="nav-badge hidden" id="badge-messages">0</div>
+            <div class="nav-icons">
+                <div class="nav-icon" onclick="switchTab('chats')" id="tab-chats">
+                    💬 <div id="badge-chats" class="badge hidden">0</div>
                 </div>
-                <button class="nav-icon-btn" id="btn-profile">👤</button>
+                <div class="nav-icon" onclick="switchTab('profile')" id="tab-profile">👤</div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    let userData = null, allTags = [], selectedTags = [], allProfiles = [], allLikes = [], currentChat = null;
-    let filters = { ageMin: 18, ageMax: 99, city: '' };
-    let isEditing = false, isSaving = false;
     const API_BASE = window.location.origin + '/api';
     const tg = window.Telegram?.WebApp;
+    let user = null;
+    let profiles = [];
+    let currentProfileIdx = 0;
+    let activeTab = 'feed';
+    let editMode = false;
+    let currentChatUser = null;
 
-    if (tg) {
-        tg.expand();
-        tg.ready();
-        tg.enableClosingConfirmation();
-        tg.disableVerticalSwipes?.();
-    }
-
-    function haptic(type = 'medium') {
-        if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred(type);
-    }
-
+    // --- INIT ---
     async function init() {
-        if (!tg?.initDataUnsafe?.user) return;
-        const user = tg.initDataUnsafe.user;
-        userData = { id: user.id };
-        
-        try {
-            allTags = await fetch(`${API_BASE}/tags`).then(r => r.json()).catch(() => []);
-        } catch (e) { console.error('Tags fetch error:', e); }
-        renderSetupTags();
-        
-        try {
-            const existing = await fetch(`${API_BASE}/user/${user.id}`).then(r => r.ok ? r.json() : null);
-            if (existing?.name && existing?.age && existing?.city && existing?.bio) {
-                userData = existing;
-                document.getElementById('setup-section').classList.add('hidden');
-                document.getElementById('bottom-nav').classList.remove('hidden');
-                switchSection('feed');
-                loadProfiles();
-                loadLikes();
-                loadChats();
-            } else {
-                document.getElementById('setup-section').classList.remove('hidden');
-                document.getElementById('main-screen').style.display = 'none';
-                document.getElementById('bottom-nav').classList.add('hidden');
-            }
-        } catch (e) { 
-            console.error('User fetch error:', e);
-            document.getElementById('setup-section').classList.remove('hidden');
-            document.getElementById('main-screen').style.display = 'none';
-            document.getElementById('bottom-nav').classList.add('hidden');
+        if (tg) {
+            tg.expand();
+            tg.ready();
+            tg.disableVerticalSwipes();
         }
-    }
-
-    function renderSetupTags() {
-        const container = document.getElementById('setup-tags-container');
-        container.innerHTML = allTags.map(tag => 
-            `<div class="tag ${selectedTags.includes(tag.id) ? 'selected' : ''}" onclick="toggleTag(${tag.id})">${tag.emoji} ${tag.name}</div>`
-        ).join('');
-    }
-
-    function toggleTag(tagId) {
-        selectedTags = selectedTags.includes(tagId) ? selectedTags.filter(id => id !== tagId) : [...selectedTags, tagId];
-        renderSetupTags();
-    }
-
-    async function saveProfile() {
-        if (isSaving) return;
-        isSaving = true;
-        const btn = document.getElementById('create-btn');
-        btn.disabled = true;
-        const originalText = btn.textContent;
-        btn.textContent = '⚡ Загрузка...';
         
+        const tgUser = tg?.initDataUnsafe?.user;
+        if (!tgUser) return; // Not in TG
+
+        // Try load user
         try {
-            const name = document.getElementById('setup-name').value.trim();
-            const age = document.getElementById('setup-age').value;
-            const city = document.getElementById('setup-city').value.trim();
-            const bio = document.getElementById('setup-bio').value.trim();
-            
-            if (!name || !age || !city || !bio) {
-                alert('⚠️ Заполни все поля!');
-                return;
-            }
-            
-            haptic('light');
-            const photoFile = document.getElementById('photoInput').files[0];
-            let photoUrl = userData?.photo_url || null;
-            
-            if (photoFile) {
-                try {
-                    const reader = new FileReader();
-                    const photoData = await new Promise((resolve) => {
-                        reader.onload = (e) => resolve(e.target.result);
-                        reader.readAsDataURL(photoFile);
-                    });
-                    
-                    const uploadRes = await fetch(`${API_BASE}/upload-photo`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ user_id: userData.id, photo_data: photoData })
-                    }).then(r => r.json());
-                    
-                    if (uploadRes.photo_url) {
-                        photoUrl = uploadRes.photo_url;
-                    } else {
-                        alert('⚠️ Не удалось загрузить фото');
-                        return;
-                    }
-                } catch (e) {
-                    console.error('Photo upload error:', e);
-                    alert('⚠️ Ошибка с фото: ' + e.message);
-                    return;
-                }
-            }
-            
-            const userRes = await fetch(`${API_BASE}/user`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: userData.id, name, age: parseInt(age), city, bio, photo_url: photoUrl, tag_ids: selectedTags })
-            }).then(r => r.json());
-            
-            if (userRes.error) {
-                alert('⚠️ Ошибка сохранения: ' + userRes.error);
-                return;
-            }
-            
-            userData = { id: userData.id, name, age: parseInt(age), city, bio, photo_url: photoUrl, tags: [] };
-            haptic('medium');
-            
-            if (!isEditing) {
-                document.getElementById('setup-section').classList.add('hidden');
-                document.getElementById('main-screen').style.display = 'flex';
-                document.getElementById('bottom-nav').classList.remove('hidden');
-                switchSection('feed');
-                loadProfiles();
+            const res = await fetch(`${API_BASE}/user/${tgUser.id}`);
+            if (res.ok) {
+                user = await res.json();
+                showApp();
             } else {
-                isEditing = false;
-                switchSection('profile');
-                showProfileView();
+                showSetup();
             }
         } catch (e) {
-            console.error('Save profile error:', e);
-            alert('⚠️ Ошибка: ' + e.message);
-        } finally {
-            isSaving = false;
-            btn.disabled = false;
-            btn.textContent = originalText;
+            showSetup();
+        }
+
+        loadTags();
+    }
+    
+    // --- NAVIGATION ---
+    function showSetup() {
+        document.getElementById('setup-screen').classList.remove('hidden');
+        document.getElementById('main-app').classList.add('hidden');
+    }
+
+    function showApp() {
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+        switchTab('feed');
+    }
+
+    function switchTab(tab) {
+        activeTab = tab;
+        
+        // UI Toggles
+        document.querySelectorAll('.nav-item, .nav-icon').forEach(el => el.classList.remove('active'));
+        if(tab === 'feed') document.getElementById('tab-feed').classList.add('active');
+        if(tab === 'likes') document.getElementById('tab-likes').classList.add('active');
+        if(tab === 'chats') document.getElementById('tab-chats').classList.add('active');
+        if(tab === 'profile') document.getElementById('tab-profile').classList.add('active');
+
+        // View Toggles
+        ['view-feed', 'view-likes', 'view-chats', 'view-profile', 'view-chat-room'].forEach(id => {
+            document.getElementById(id).classList.add('hidden');
+        });
+        document.getElementById('view-' + (tab === 'chat-room' ? 'chats' : tab)).classList.remove('hidden'); // Hack for chat room parent
+
+        if(tab === 'feed') {
+            document.getElementById('view-feed').classList.remove('hidden');
+            document.getElementById('filter-btn').classList.remove('hidden');
+            loadFeed();
+        } else {
+            document.getElementById('filter-btn').classList.add('hidden');
+            document.getElementById('filters-panel').classList.remove('visible');
+        }
+
+        if(tab === 'likes') {
+            document.getElementById('view-likes').classList.remove('hidden');
+            loadLikes();
+        }
+        if(tab === 'chats') {
+            document.getElementById('view-chats').classList.remove('hidden');
+            loadChats();
+        }
+        if(tab === 'profile') {
+            document.getElementById('view-profile').classList.remove('hidden');
+            renderProfileSelf();
         }
     }
 
-    async function loadProfiles() {
+    // --- FEED ---
+    async function loadFeed() {
+        const ageMin = document.getElementById('filter-age-min').value || 18;
+        const ageMax = document.getElementById('filter-age-max').value || 99;
+        const city = document.getElementById('filter-city').value || '';
+        
+        const q = new URLSearchParams({ age_min: ageMin, age_max: ageMax, city });
         try {
-            const params = new URLSearchParams({ age_min: filters.ageMin, age_max: filters.ageMax, city: filters.city });
-            allProfiles = await fetch(`${API_BASE}/profiles/${userData.id}?${params}`).then(r => r.json()).catch(() => []);
-            renderCards();
-        } catch (e) { console.error('Load profiles error:', e); }
+            profiles = await fetch(`${API_BASE}/profiles/${user.id}?${q}`).then(r => r.json());
+            currentProfileIdx = 0;
+            renderCard();
+        } catch(e) { console.error(e); }
     }
 
-    function renderCards() {
-        const noProfiles = document.getElementById('no-profiles');
-        if (!allProfiles.length) {
-            noProfiles.innerHTML = `<div class="empty-state-emoji">🌟</div><div>Профилей не найдено</div><div style="font-size: 12px; margin-top: 8px;">Ты просмотрел всех. Попробуй изменить фильтры!</div>`;
-            noProfiles.classList.remove('hidden');
-            document.getElementById('feed-photo').src = '';
-            document.getElementById('feed-name').textContent = '—';
-            document.getElementById('feed-age').textContent = '—';
-            document.getElementById('feed-city').querySelector('span:last-child').textContent = '—';
-            document.getElementById('feed-bio').textContent = '—';
-            document.getElementById('feed-tags').innerHTML = '';
+    function renderCard() {
+        const card = document.getElementById('view-feed');
+        const empty = document.getElementById('feed-empty');
+        
+        if (!profiles[currentProfileIdx]) {
+            card.children[0].classList.add('hidden'); // hide photo layer
+            card.children[1].classList.add('hidden'); // hide content
+            card.children[2].classList.add('hidden'); // hide buttons
+            empty.classList.remove('hidden');
             return;
         }
-        noProfiles.classList.add('hidden');
-        const profile = allProfiles[0];
-        document.getElementById('feed-photo').src = profile.photo_url || '';
-        document.getElementById('feed-name').textContent = profile.name;
-        document.getElementById('feed-age').textContent = profile.age;
-        document.getElementById('feed-city').querySelector('span:last-child').textContent = profile.city;
-        document.getElementById('feed-bio').textContent = profile.bio;
-        const tagsContainer = document.getElementById('feed-tags');
-        tagsContainer.innerHTML = '';
-        (profile.tags || []).forEach((t, i) => {
-            const div = document.createElement('div');
-            div.className = 'chip' + (i === 0 ? ' chip-accent' : '');
-            div.textContent = `${t.emoji} ${t.name}`;
-            tagsContainer.appendChild(div);
-        });
+
+        const p = profiles[currentProfileIdx];
+        empty.classList.add('hidden');
+        card.children[0].classList.remove('hidden');
+        card.children[1].classList.remove('hidden');
+        card.children[2].classList.remove('hidden');
+
+        document.getElementById('card-photo').src = p.photo_url;
+        document.getElementById('card-name').textContent = p.name;
+        document.getElementById('card-age').textContent = p.age;
+        document.getElementById('card-city').textContent = p.city;
+        document.getElementById('card-bio').textContent = p.bio;
+        
+        const tags = document.getElementById('card-tags');
+        tags.innerHTML = p.tags.map(t => `<span class="feed-tag">${t.emoji} ${t.name}</span>`).join('');
     }
 
-    async function handleSwipe(toUserId, isLike) {
-        haptic('medium');
+    async function swipe(isLike) {
+        if (tg) tg.HapticFeedback.impactOccurred(isLike ? 'heavy' : 'light');
+        const p = profiles[currentProfileIdx];
+        if (!p) return;
+
+        // Optimistic UI
+        currentProfileIdx++;
+        renderCard();
+
         try {
             const res = await fetch(`${API_BASE}/like`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ from_user: userData.id, to_user: toUserId })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ from_user: user.id, to_user: p.id, dislike: !isLike })
             }).then(r => r.json());
-            if (res.match) { haptic('heavy'); loadChats(); }
-        } catch (e) { console.error('Like error:', e); }
-        allProfiles = allProfiles.filter(p => p.id !== toUserId);
-        renderCards();
-    }
-
-    document.getElementById('btn-like').addEventListener('click', () => {
-        if (allProfiles.length) handleSwipe(allProfiles[0].id, true);
-    });
-
-    document.getElementById('btn-dislike').addEventListener('click', () => {
-        if (allProfiles.length) handleSwipe(allProfiles[0].id, false);
-    });
-
-    const feed = document.getElementById('feed-section');
-    let startX = 0, currentX = 0, isDragging = false;
-    const swipeThreshold = 60;
-
-    function handleStart(x) {
-        if (!allProfiles.length) return;
-        isDragging = true;
-        startX = x;
-        currentX = x;
-        feed.style.transition = 'none';
-    }
-
-    function handleMove(x) {
-        if (!isDragging) return;
-        currentX = x;
-        const delta = currentX - startX;
-        const rotation = delta * 0.03;
-        const opacity = 1 - Math.min(Math.abs(delta) / 260, 0.6);
-        feed.style.transform = `translateX(${delta}px) rotate(${rotation}deg)`;
-        feed.style.opacity = opacity;
-    }
-
-    function handleEnd() {
-        if (!isDragging) return;
-        isDragging = false;
-        const delta = currentX - startX;
-        if (Math.abs(delta) > swipeThreshold) {
-            haptic('light');
-            const direction = delta > 0 ? 1 : -1;
-            feed.style.transition = 'transform 0.22s ease-out, opacity 0.22s ease-out';
-            feed.style.transform = `translateX(${direction * 420}px) rotate(${direction * 14}deg)`;
-            feed.style.opacity = 0;
-            setTimeout(() => {
-                feed.style.transition = 'none';
-                feed.style.transform = 'translateX(0) rotate(0)';
-                feed.style.opacity = 1;
-                if (allProfiles.length) handleSwipe(allProfiles[0].id, delta > 0);
-            }, 220);
-        } else {
-            feed.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
-            feed.style.transform = 'translateX(0) rotate(0)';
-            feed.style.opacity = 1;
-        }
-    }
-
-    feed.addEventListener('touchstart', (e) => handleStart(e.touches[0].clientX));
-    feed.addEventListener('touchmove', (e) => handleMove(e.touches[0].clientX));
-    feed.addEventListener('touchend', handleEnd);
-    feed.addEventListener('mousedown', (e) => handleStart(e.clientX));
-    window.addEventListener('mousemove', (e) => handleMove(e.clientX));
-    window.addEventListener('mouseup', handleEnd);
-
-    async function loadLikes() {
-        try {
-            allLikes = await fetch(`${API_BASE}/likes/${userData.id}`).then(r => r.json()).catch(() => []);
-            renderLikes();
-        } catch (e) { console.error('Load likes error:', e); }
-    }
-
-    function renderLikes() {
-        const container = document.getElementById('likes-container'), noLikes = document.getElementById('no-likes');
-        if (!allLikes.length) {
-            container.innerHTML = '';
-            noLikes.classList.remove('hidden');
-            document.getElementById('badge-messages').classList.add('hidden');
-        } else {
-            noLikes.classList.add('hidden');
-            document.getElementById('badge-messages').textContent = allLikes.length;
-            document.getElementById('badge-messages').classList.remove('hidden');
-            container.innerHTML = allLikes.map(like => `
-                <div class="like-card">
-                    <img src="${like.photo_url || ''}" class="like-photo" />
-                    <div class="like-info">
-                        <div class="like-header">
-                            <div class="like-name">${like.name}, ${like.age}</div>
-                            <div class="like-badge">❤️</div>
-                        </div>
-                        <div class="like-location">📍 ${like.city}</div>
-                        <div class="like-actions">
-                            <button class="btn btn-small-primary" onclick="likeUser(${like.id})">❤️</button>
-                            <button class="btn btn-small-secondary" onclick="dislikeUser(${like.id})">👋</button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-    }
-
-    async function likeUser(userId) {
-        haptic('light');
-        try {
-            await fetch(`${API_BASE}/like`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ from_user: userData.id, to_user: userId })
-            }).then(r => r.json());
-        } catch (e) { console.error('Like error:', e); return; }
-        allLikes = allLikes.filter(l => l.id !== userId);
-        renderLikes();
-        await new Promise(r => setTimeout(r, 300));
-        loadChats();
-        switchSection('messages');
-    }
-
-    async function dislikeUser(userId) {
-        haptic('light');
-        try {
-            await fetch(`${API_BASE}/like`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ from_user: userData.id, to_user: userId, dislike: true })
-            }).then(r => r.json());
-        } catch (e) { console.error('Dislike error:', e); return; }
-        allLikes = allLikes.filter(l => l.id !== userId);
-        renderLikes();
-    }
-
-    async function loadChats() {
-        try {
-            const chats = await fetch(`${API_BASE}/chats/${userData.id}`).then(r => r.json()).catch(() => []);
-            const chatList = document.getElementById('chat-list'), noChats = document.getElementById('no-chats');
-            if (!chats.length) {
-                chatList.innerHTML = '';
-                noChats.classList.remove('hidden');
-            } else {
-                noChats.classList.add('hidden');
-                chatList.innerHTML = chats.map(chat => `
-                    <div class="chat-item" onclick="openChat(${chat.user_id}, '${chat.user_name}', '${chat.user_photo || ''}')">
-                        <div class="chat-header-item">
-                            <div class="chat-avatar">${chat.user_name.charAt(0).toUpperCase()}</div>
-                            <div class="chat-info">
-                                <div class="chat-name">${chat.user_name}</div>
-                                <div class="chat-preview">${chat.last_message || 'Начни разговор...'}</div>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
+            
+            if (res.match) {
+                if(tg) tg.HapticFeedback.notificationOccurred('success');
+                alert(`Это Мэтч с ${p.name}! Переходим в чат.`);
+                openChat(p.id, p.name, p.photo_url);
             }
-        } catch (e) { console.error('Load chats error:', e); }
+        } catch(e) {}
     }
 
-    function openChat(userId, userName, userPhoto) {
-        currentChat = { userId, userName, userPhoto };
-        document.getElementById('chat-list-view').classList.add('hidden');
-        document.getElementById('chat-detail-view').classList.remove('hidden');
+    function toggleFilters() {
+        document.getElementById('filters-panel').classList.toggle('visible');
+    }
+    
+    function applyFilters() {
+        toggleFilters();
+        loadFeed();
+    }
+
+    // --- PROFILE CREATION / EDIT ---
+    let selectedTags = [];
+    async function loadTags() {
+        const tags = await fetch(`${API_BASE}/tags`).then(r => r.json());
+        const container = document.getElementById('setup-tags');
+        container.innerHTML = tags.map(t => 
+            `<div class="feed-tag" onclick="toggleTag(${t.id}, this)" style="cursor:pointer; border:1px solid #334155">${t.emoji} ${t.name}</div>`
+        ).join('');
+    }
+
+    window.toggleTag = function(id, el) {
+        if(selectedTags.includes(id)) {
+            selectedTags = selectedTags.filter(x => x !== id);
+            el.style.background = 'transparent';
+        } else {
+            selectedTags.push(id);
+            el.style.background = 'var(--accent)';
+        }
+    }
+
+    document.getElementById('setup-photo').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            document.getElementById('preview-photo').src = ev.target.result;
+            document.getElementById('preview-photo').style.display = 'block';
+            document.getElementById('placeholder-photo').style.display = 'none';
+        }
+        reader.readAsDataURL(file);
+    });
+
+    async function createProfile() {
+        const name = document.getElementById('input-name').value;
+        const age = document.getElementById('input-age').value;
+        const city = document.getElementById('input-city').value;
+        const bio = document.getElementById('input-bio').value;
+        const file = document.getElementById('setup-photo').files[0];
+        
+        // If edit mode, use existing values if empty? No, require logic.
+        // For simplicity:
+        if (!name || !age || !city) return alert('Заполните обязательные поля');
+
+        let photoUrl = user?.photo_url;
+        if (file) {
+            // Upload logic would go here. Simulating for now or need base64.
+            // In real app, we convert to base64 and send.
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            await new Promise(r => reader.onload = r);
+            const base64 = reader.result;
+            
+            const up = await fetch(`${API_BASE}/upload-photo`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: tg.initDataUnsafe.user.id, photo_data: base64 })
+            }).then(r=>r.json());
+            photoUrl = up.photo_url;
+        }
+
+        const payload = {
+            id: tg.initDataUnsafe.user.id,
+            name, age: parseInt(age), city, bio,
+            photo_url: photoUrl,
+            tag_ids: selectedTags
+        };
+
+        const res = await fetch(`${API_BASE}/user`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            user = await res.json();
+            showApp();
+        } else {
+            alert('Ошибка создания профиля');
+        }
+    }
+
+    // --- EDIT & DELETE ---
+    function renderProfileSelf() {
+        document.getElementById('my-photo').src = user.photo_url;
+        document.getElementById('my-name').textContent = `${user.name}, ${user.age}`;
+        document.getElementById('my-bio').textContent = user.bio;
+    }
+
+    window.startEditProfile = function() {
+        showSetup();
+        document.getElementById('input-name').value = user.name;
+        document.getElementById('input-age').value = user.age;
+        document.getElementById('input-city').value = user.city;
+        document.getElementById('input-bio').value = user.bio;
+        document.getElementById('preview-photo').src = user.photo_url;
+        document.getElementById('preview-photo').style.display = 'block';
+        // tags logic needs matching
+    }
+
+    window.deleteProfile = async function() {
+        if(!confirm('Удалить анкету?')) return;
+        await fetch(`${API_BASE}/user/${user.id}`, { method: 'DELETE' });
+        user = null;
+        showSetup();
+    }
+
+    // --- LIKES ---
+    async function loadLikes() {
+        const list = await fetch(`${API_BASE}/likes/${user.id}`).then(r => r.json());
+        const container = document.getElementById('view-likes');
+        const empty = document.getElementById('likes-empty');
+        container.innerHTML = '';
+        
+        if(!list.length) {
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
+
+        list.forEach(l => {
+            container.innerHTML += `
+            <div class="list-item">
+                <img src="${l.photo_url}" class="list-avatar">
+                <div class="list-info">
+                    <div class="list-title">${l.name}, ${l.age}</div>
+                    <div class="list-sub">${l.city}</div>
+                </div>
+                <div class="list-actions">
+                    <button class="mini-btn btn-accept" onclick="replyLike(${l.id}, '${l.name}', '${l.photo_url}')">❤️</button>
+                    <button class="mini-btn btn-reject" onclick="rejectLike(${l.id})">✕</button>
+                </div>
+            </div>`;
+        });
+    }
+
+    window.replyLike = async function(id, name, photo) {
+        await fetch(`${API_BASE}/like`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ from_user: user.id, to_user: id })
+        });
+        openChat(id, name, photo);
+    }
+    
+    window.rejectLike = async function(id) {
+        await fetch(`${API_BASE}/like`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ from_user: user.id, to_user: id, dislike: true })
+        });
+        loadLikes();
+    }
+
+    // --- CHATS ---
+    async function loadChats() {
+        const chats = await fetch(`${API_BASE}/chats/${user.id}`).then(r => r.json());
+        const container = document.getElementById('view-chats');
+        const empty = document.getElementById('chats-empty');
+        container.innerHTML = '';
+        
+        if(!chats.length) {
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
+        document.getElementById('badge-chats').textContent = chats.length;
+        document.getElementById('badge-chats').classList.remove('hidden');
+
+        chats.forEach(c => {
+            container.innerHTML += `
+            <div class="list-item" onclick="openChat(${c.user_id}, '${c.user_name}', '${c.user_photo}')">
+                <img src="${c.user_photo}" class="list-avatar">
+                <div class="list-info">
+                    <div class="list-title">${c.user_name}</div>
+                    <div class="list-sub">${c.last_message || 'Написать сообщение...'}</div>
+                </div>
+            </div>`;
+        });
+    }
+
+    // --- CHAT ROOM ---
+    window.openChat = function(id, name, photo) {
+        currentChatUser = id;
+        document.getElementById('view-chats').classList.add('hidden');
+        document.getElementById('view-chat-room').classList.remove('hidden');
+        document.getElementById('bottom-nav').classList.add('hidden');
+        
+        document.getElementById('room-name').textContent = name;
+        document.getElementById('room-avatar').src = photo;
         loadMessages();
     }
 
-    function backToChats() {
-        currentChat = null;
-        document.getElementById('chat-list-view').classList.remove('hidden');
-        document.getElementById('chat-detail-view').classList.add('hidden');
+    window.closeChat = function() {
+        currentChatUser = null;
+        document.getElementById('view-chat-room').classList.add('hidden');
+        document.getElementById('view-chats').classList.remove('hidden');
+        document.getElementById('bottom-nav').classList.remove('hidden');
+        loadChats();
     }
 
     async function loadMessages() {
-        if (!currentChat) return;
-        try {
-            const messages = await fetch(`${API_BASE}/messages/${currentChat.userId}/${userData.id}`).then(r => r.json()).catch(() => []);
-            const msgList = document.getElementById('messages-list');
-            msgList.innerHTML = messages.map(msg => `
-                <div class="message ${msg.from_user === userData.id ? 'own' : 'other'}">
-                    <div>${msg.text}</div>
-                    <div class="message-time">${new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>
-                </div>
-            `).join('');
-            msgList.scrollTop = msgList.scrollHeight;
-        } catch (e) { console.error('Load messages error:', e); }
-    }
-
-    async function sendMessage() {
-        const input = document.getElementById('message-input');
-        const text = input.value.trim();
-        if (!text || !currentChat) return;
-        try {
-            await fetch(`${API_BASE}/message`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ from_user: userData.id, to_user: currentChat.userId, text })
-            }).then(r => r.json());
-        } catch (e) { console.error('Send message error:', e); return; }
-        input.value = '';
-        loadMessages();
-        haptic('light');
-    }
-
-    function editProfile() {
-        isEditing = true;
-        selectedTags = userData.tags?.map(t => t.id) || [];
-        document.getElementById('setup-name').value = userData.name || '';
-        document.getElementById('setup-age').value = userData.age || '';
-        document.getElementById('setup-city').value = userData.city || '';
-        document.getElementById('setup-bio').value = userData.bio || '';
-        if (userData.photo_url) {
-            document.getElementById('photoPreview').src = userData.photo_url;
-            document.getElementById('photoPreview').style.display = 'block';
-            document.getElementById('photoPlaceholder').style.display = 'none';
-        }
-        renderSetupTags();
-        document.getElementById('setup-section').classList.remove('hidden');
-        document.getElementById('main-screen').style.display = 'none';
-        document.getElementById('bottom-nav').classList.add('hidden');
-    }
-
-    async function deleteProfile() {
-        if (!confirm('⚠️ Это действие необратимо! Все данные будут удалены. Продолжить?')) return;
-        if (!confirm('⚠️ Действительно удалить профиль?')) return;
-        haptic('heavy');
-        try {
-            const res = await fetch(`${API_BASE}/user/${userData.id}`, { method: 'DELETE' });
-            if (!res.ok) {
-                alert('⚠️ Ошибка при удалении профиля');
-                return;
-            }
-        } catch (e) { console.error('Delete error:', e); alert('⚠️ Ошибка: ' + e.message); return; }
-        
-        userData = null;
-        selectedTags = [];
-        allProfiles = [];
-        allLikes = [];
-        currentChat = null;
-        
-        document.getElementById('setup-name').value = '';
-        document.getElementById('setup-age').value = '';
-        document.getElementById('setup-city').value = '';
-        document.getElementById('setup-bio').value = '';
-        document.getElementById('photoInput').value = '';
-        document.getElementById('photoPreview').style.display = 'none';
-        document.getElementById('photoPlaceholder').style.display = 'block';
-        
-        document.getElementById('setup-section').classList.remove('hidden');
-        document.getElementById('main-screen').style.display = 'none';
-        document.getElementById('bottom-nav').classList.add('hidden');
-        
-        haptic('medium');
-        alert('✅ Профиль удален. Создай новый!');
-    }
-
-    function switchSection(section) {
-        document.querySelectorAll('#main-screen > div').forEach(s => s.classList.add('hidden'));
-        document.querySelectorAll('.segmented-item').forEach(b => b.classList.remove('active'));
-        
-        if (section === 'feed') {
-            document.getElementById('feed-section').classList.remove('hidden');
-            document.querySelectorAll('.segmented-item')[0].classList.add('active');
-            loadProfiles();
-        } else if (section === 'likes') {
-            document.getElementById('likes-section').classList.remove('hidden');
-            document.querySelectorAll('.segmented-item')[1].classList.add('active');
-            loadLikes();
-        } else if (section === 'messages') {
-            document.getElementById('messages-section').classList.remove('hidden');
-            backToChats();
-            loadChats();
-        } else if (section === 'profile') {
-            document.getElementById('profile-section').classList.remove('hidden');
-            showProfileView();
-        }
-    }
-
-    function showProfileView() {
-        const container = document.getElementById('profile-view-container');
-        container.innerHTML = `
-            <div class="profile-card">
-                <div class="profile-photo-section">
-                    ${userData.photo_url ? `<img src="${userData.photo_url}" />` : ''}
-                    <h2>${userData.name}, ${userData.age}</h2>
-                    <p>📍 ${userData.city}</p>
-                </div>
-                <div class="profile-bio">
-                    <div class="profile-section-title">💬 О мне</div>
-                    <p>${userData.bio}</p>
-                </div>
-                <div class="btn-group">
-                    <button class="btn btn-secondary" onclick="editProfile()">✏️ Редактировать</button>
-                </div>
-                <button class="btn btn-danger" onclick="deleteProfile()">🗑️ Удалить профиль</button>
+        if(!currentChatUser) return;
+        const msgs = await fetch(`${API_BASE}/messages/${currentChatUser}/${user.id}`).then(r => r.json());
+        const area = document.getElementById('room-messages');
+        area.innerHTML = msgs.map(m => `
+            <div class="message-bubble ${m.from_user == user.id ? 'msg-own' : 'msg-other'}">
+                ${m.text}
             </div>
-        `;
+        `).join('');
+        area.scrollTop = area.scrollHeight;
     }
 
-    document.getElementById('photoInput').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const preview = document.getElementById('photoPreview');
-                preview.src = event.target.result;
-                preview.style.display = 'block';
-                document.getElementById('photoPlaceholder').style.display = 'none';
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    document.getElementById('nav-toggle').querySelectorAll('.segmented-item').forEach((item, idx) => {
-        item.addEventListener('click', () => {
-            haptic('light');
-            switchSection(idx === 0 ? 'feed' : 'likes');
+    window.sendMsg = async function() {
+        const txt = document.getElementById('room-input').value;
+        if(!txt) return;
+        await fetch(`${API_BASE}/message`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ from_user: user.id, to_user: currentChatUser, text: txt })
         });
-    });
-
-    document.getElementById('btn-messages').addEventListener('click', () => {
-        haptic('light');
-        switchSection('messages');
-    });
-
-    document.getElementById('btn-profile').addEventListener('click', () => {
-        haptic('light');
-        switchSection('profile');
-    });
+        document.getElementById('room-input').value = '';
+        loadMessages();
+    }
 
     init();
 </script>
