@@ -237,17 +237,17 @@
             
             <!-- 1. FEED -->
             <div id="view-feed" class="feed-frame">
-                <div class="feed-photo-layer">
+                <div id="feed-photo-layer" class="feed-photo-layer">
                     <img id="card-photo" class="feed-photo" src="" />
                     <div class="feed-gradient-overlay"></div>
                 </div>
-                <div class="feed-content">
+                <div id="feed-content" class="feed-content">
                     <div class="feed-name"><span id="card-name"></span>, <span id="card-age"></span></div>
                     <div class="feed-location">📍 <span id="card-city"></span></div>
                     <div class="feed-bio" id="card-bio"></div>
                     <div class="feed-tags" id="card-tags"></div>
                 </div>
-                <div class="actions-float">
+                <div id="feed-actions" class="actions-float">
                     <button class="circle-btn btn-dislike" onclick="swipe(false)">✕</button>
                     <button class="circle-btn btn-like" onclick="swipe(true)">♥</button>
                 </div>
@@ -425,23 +425,27 @@
     }
 
     function renderCard() {
-        const card = document.getElementById('view-feed');
-        const empty = document.getElementById('feed-empty');
+        const feedPhotoLayer = document.getElementById('feed-photo-layer');
+        const feedContent = document.getElementById('feed-content');
+        const feedActions = document.getElementById('feed-actions');
+        const feedEmpty = document.getElementById('feed-empty');
         
         if (!profiles[currentProfileIdx]) {
-            card.children[0].classList.add('hidden'); // hide photo layer
-            card.children[1].classList.add('hidden'); // hide content
-            card.children[2].classList.add('hidden'); // hide buttons
-            empty.classList.remove('hidden');
+            // Nothing to show: hide everything, show empty state
+            feedPhotoLayer.classList.add('hidden');
+            feedContent.classList.add('hidden');
+            feedActions.classList.add('hidden');
+            feedEmpty.classList.remove('hidden');
             return;
         }
 
-        const p = profiles[currentProfileIdx];
-        empty.classList.add('hidden');
-        card.children[0].classList.remove('hidden');
-        card.children[1].classList.remove('hidden');
-        card.children[2].classList.remove('hidden');
+        // Has profile: show everything, hide empty state
+        feedEmpty.classList.add('hidden');
+        feedPhotoLayer.classList.remove('hidden');
+        feedContent.classList.remove('hidden');
+        feedActions.classList.remove('hidden');
 
+        const p = profiles[currentProfileIdx];
         document.getElementById('card-photo').src = p.photo_url;
         document.getElementById('card-name').textContent = p.name;
         document.getElementById('card-age').textContent = p.age;
