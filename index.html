@@ -197,7 +197,7 @@
         <button class="profile-modal-back" onclick="closeProfileModal()">←</button>
         <span style="font-weight: 600; font-size: 16px;">Профиль</span>
     </div>
-    <img id="modal-photo" class="profile-modal-photo" />
+    <img id="modal-photo" class="profile-modal-photo" onerror="this.src=PLACEHOLDER_IMG" />
     <div class="profile-modal-content">
         <div class="profile-modal-name"><span id="modal-name"></span>, <span id="modal-age"></span></div>
         <div class="profile-modal-location">📍 <span id="modal-city"></span></div>
@@ -217,7 +217,7 @@
     
     <div class="setup-content">
         <div class="photo-picker" onclick="document.getElementById('setup-photo').click()">
-            <img id="preview-photo" style="display: none;" />
+            <img id="preview-photo" style="display: none;" onerror="this.src=PLACEHOLDER_IMG" />
             <div id="placeholder-photo" style="text-align: center;">
                 <span style="font-size: 24px;">📸</span>
                 <span style="font-size: 11px; display: block;">Добавить фото</span>
@@ -303,7 +303,7 @@
             <!-- 4. PROFILE -->
             <div id="view-profile" class="list-container hidden">
                 <div style="text-align: center; margin-top: 20px;">
-                    <img id="my-photo" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent);" />
+                    <img id="my-photo" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent);" onerror="this.src=PLACEHOLDER_IMG" />
                     <h2 id="my-name" style="margin-top: 10px; font-size: 24px;"></h2>
                     <p id="my-bio" style="color: #94a3b8; margin-top: 6px; font-size: 14px; padding: 0 20px;"></p>
                 </div>
@@ -317,7 +317,7 @@
             <div id="view-chat-room" class="chat-view hidden">
                 <div class="chat-header">
                     <button class="chat-back" onclick="closeChat()">←</button>
-                    <img id="room-avatar" style="width: 32px; height: 32px; border-radius: 50%;" />
+                    <img id="room-avatar" style="width: 32px; height: 32px; border-radius: 50%;" onerror="this.src=PLACEHOLDER_IMG" />
                     <span id="room-name" style="font-weight: 600;"></span>
                 </div>
                 <div id="room-messages" class="messages-area"></div>
@@ -350,14 +350,25 @@
 <script>
     const API_BASE = window.location.origin + '/api';
     const tg = window.Telegram?.WebApp;
+    // Gray SVG placeholder
+    const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23334155'%3E%3Crect width='24' height='24' fill='%231e293b'/%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' fill='%23475569'/%3E%3C/svg%3E";
+    
     let user = null;
     let profiles = [];
     let currentProfileIdx = 0;
     let activeTab = 'feed';
     let editMode = false;
     let currentChatUser = null;
-    let modalProfile = null; // Текущий профиль в модалке
-    let modalContext = 'feed'; // 'feed' или 'likes'
+    let modalProfile = null;
+    let modalContext = 'feed';
+
+    // Helper to robustly resolve image URLs
+    function resolvePhotoUrl(url) {
+        if (!url || url === 'undefined' || url === 'null') return PLACEHOLDER_IMG;
+        if (url.startsWith('data:') || url.startsWith('http')) return url;
+        // Handle relative paths by prepending origin
+        return window.location.origin + (url.startsWith('/') ? '' : '/') + url;
+    }
 
     // --- INIT ---
     async function init() {
@@ -394,7 +405,7 @@
         modalProfile = profile;
         modalContext = context;
         
-        document.getElementById('modal-photo').src = profile.photo_url;
+        document.getElementById('modal-photo').src = resolvePhotoUrl(profile.photo_url);
         document.getElementById('modal-name').textContent = profile.name;
         document.getElementById('modal-age').textContent = profile.age;
         document.getElementById('modal-city').textContent = profile.city;
@@ -417,7 +428,6 @@
         if (tg) tg.HapticFeedback.impactOccurred(isLike ? 'heavy' : 'light');
         
         if (modalContext === 'feed') {
-            // Свайп из ленты
             currentProfileIdx++;
             closeProfileModal();
             renderCard();
@@ -436,7 +446,6 @@
                 }
             } catch(e) {}
         } else if (modalContext === 'likes') {
-            // Ответ на лайк
             closeProfileModal();
             
             if (isLike) {
@@ -455,12 +464,12 @@
                     headers: {'Content-Type':'application/json'},
                     body: JSON.stringify({ from_user: user.id, to_user: modalProfile.id, dislike: true })
                 });
-                loadLikes(); // Обновить список
+                loadLikes();
             }
         }
     }
 
-    // --- NAVIGATION & SETUP MODES ---
+    // --- NAVIGATION & SETUP ---
     window.showSetup = function(isEdit = false) {
         editMode = isEdit;
         const title = document.getElementById('setup-title');
@@ -573,11 +582,12 @@
 
         const p = profiles[currentProfileIdx];
         const tagsHtml = p.tags.map(t => `<span class="feed-tag">${t.emoji} ${t.name}</span>`).join('');
+        const photoUrl = resolvePhotoUrl(p.photo_url);
         
         viewFeed.innerHTML = `
             <div class="feed-frame">
                 <div class="feed-photo-layer">
-                    <img class="feed-photo" src="${p.photo_url}" />
+                    <img class="feed-photo" src="${photoUrl}" onerror="this.src=PLACEHOLDER_IMG" />
                     <div class="feed-gradient-overlay"></div>
                 </div>
                 <div class="feed-content">
@@ -736,7 +746,7 @@
             if(!user || !user.name) {
                 return showSetup(false);
             }
-            document.getElementById('my-photo').src = user.photo_url || '';
+            document.getElementById('my-photo').src = resolvePhotoUrl(user.photo_url);
             document.getElementById('my-name').textContent = `${user.name}, ${user.age}`;
             document.getElementById('my-bio').textContent = user.bio || '';
         } catch(e) { console.error(e); }
@@ -749,7 +759,7 @@
         document.getElementById('input-city').value = user.city || '';
         document.getElementById('input-bio').value = user.bio || '';
         if(user.photo_url) {
-            document.getElementById('preview-photo').src = user.photo_url;
+            document.getElementById('preview-photo').src = resolvePhotoUrl(user.photo_url);
             document.getElementById('preview-photo').style.display = 'block';
             document.getElementById('placeholder-photo').style.display = 'none';
         }
@@ -788,9 +798,10 @@
             container.classList.remove('hidden');
 
             list.forEach(l => {
+                const safeTags = JSON.stringify(l.tags || []).replace(/"/g, '&quot;');
                 container.innerHTML += `
-                <div class="list-item" onclick="viewLikeProfile(${l.id}, '${l.name}', ${l.age}, '${l.city}', '${l.bio || ''}', '${l.photo_url}', ${JSON.stringify(l.tags || []).replace(/"/g, '&quot;')})">
-                    <img src="${l.photo_url}" class="list-avatar">
+                <div class="list-item" onclick="viewLikeProfile(${l.id}, '${l.name}', ${l.age}, '${l.city}', '${l.bio || ''}', '${resolvePhotoUrl(l.photo_url)}', ${safeTags})">
+                    <img src="${resolvePhotoUrl(l.photo_url)}" class="list-avatar" onerror="this.src=PLACEHOLDER_IMG">
                     <div class="list-info">
                         <div class="list-title">${l.name}, ${l.age}</div>
                         <div class="list-sub">${l.city}</div>
@@ -826,8 +837,8 @@
 
             chats.forEach(c => {
                 container.innerHTML += `
-                <div class="list-item" onclick="openChat(${c.user_id}, '${c.user_name}', '${c.user_photo}')">
-                    <img src="${c.user_photo}" class="list-avatar">
+                <div class="list-item" onclick="openChat(${c.user_id}, '${c.user_name}', '${resolvePhotoUrl(c.user_photo)}')">
+                    <img src="${resolvePhotoUrl(c.user_photo)}" class="list-avatar" onerror="this.src=PLACEHOLDER_IMG">
                     <div class="list-info">
                         <div class="list-title">${c.user_name}</div>
                         <div class="list-sub">${c.last_message || 'Написать сообщение...'}</div>
@@ -841,7 +852,6 @@
     window.openChat = function(id, name, photo) {
         currentChatUser = id;
         
-        // Hide all views
         document.getElementById('view-chats').classList.add('hidden');
         document.getElementById('chats-empty').classList.add('hidden');
         document.getElementById('view-likes').classList.add('hidden');
@@ -849,12 +859,11 @@
         document.getElementById('view-feed').classList.add('hidden');
         document.getElementById('view-profile').classList.add('hidden');
         
-        // Show chat
         document.getElementById('view-chat-room').classList.remove('hidden');
         document.getElementById('bottom-nav').classList.add('hidden');
         
         document.getElementById('room-name').textContent = name;
-        document.getElementById('room-avatar').src = photo;
+        document.getElementById('room-avatar').src = resolvePhotoUrl(photo);
         loadMessages();
     }
 
@@ -862,8 +871,6 @@
         currentChatUser = null;
         document.getElementById('view-chat-room').classList.add('hidden');
         document.getElementById('bottom-nav').classList.remove('hidden');
-        
-        // Return to the tab user was on before chat
         switchTab(activeTab === 'feed' ? 'chats' : activeTab);
     }
 
