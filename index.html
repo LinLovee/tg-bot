@@ -108,17 +108,17 @@
         .btn-like { background: linear-gradient(135deg, #ff4b8b, #ff8a80); color: white; border: none; box-shadow: 0 10px 30px rgba(255, 75, 139, 0.4); }
 
         /* Bottom Nav */
-        .bottom-nav-glass { margin-top: auto; padding: 8px 12px; }
+        .bottom-nav-glass { margin-top: auto; padding: 8px 12px; position: relative; z-index: 100; pointer-events: auto; }
         .bottom-nav-inner {
             border-radius: 22px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(148, 163, 184, 0.2);
             display: flex; align-items: center; justify-content: space-between; padding: 6px 10px;
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
         }
         .nav-toggle { background: rgba(0,0,0,0.3); border-radius: 20px; padding: 3px; display: flex; }
-        .nav-item { padding: 6px 14px; border-radius: 16px; font-size: 12px; color: #9ca3af; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .nav-item { padding: 6px 14px; border-radius: 16px; font-size: 12px; color: #9ca3af; cursor: pointer; display: flex; align-items: center; gap: 6px; pointer-events: auto; }
         .nav-item.active { background: rgba(255, 75, 139, 0.2); color: white; }
         .nav-icons { display: flex; gap: 12px; }
-        .nav-icon { width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #cbd5e1; cursor: pointer; position: relative; }
+        .nav-icon { width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #cbd5e1; cursor: pointer; position: relative; pointer-events: auto; }
         .nav-icon.active { background: rgba(255,255,255,0.1); color: white; }
         .badge { position: absolute; top: 0; right: 0; width: 14px; height: 14px; background: #ff4b8b; border-radius: 50%; font-size: 9px; display: flex; align-items: center; justify-content: center; color: white; }
 
@@ -358,58 +358,63 @@
     }
     
     // --- NAVIGATION ---
-    function showSetup() {
+    window.showSetup = function() {
         document.getElementById('setup-screen').classList.remove('hidden');
         document.getElementById('main-app').classList.add('hidden');
     }
 
-    function showApp() {
+    window.showApp = function() {
         document.getElementById('setup-screen').classList.add('hidden');
         document.getElementById('main-app').classList.remove('hidden');
         switchTab('feed');
     }
 
-    function switchTab(tab) {
-        activeTab = tab;
-        
-        // UI Toggles
-        document.querySelectorAll('.nav-item, .nav-icon').forEach(el => el.classList.remove('active'));
-        if(tab === 'feed') document.getElementById('tab-feed').classList.add('active');
-        if(tab === 'likes') document.getElementById('tab-likes').classList.add('active');
-        if(tab === 'chats') document.getElementById('tab-chats').classList.add('active');
-        if(tab === 'profile') document.getElementById('tab-profile').classList.add('active');
+    window.switchTab = function(tab) {
+        try {
+            activeTab = tab;
+            
+            // UI Toggles
+            document.querySelectorAll('.nav-item, .nav-icon').forEach(el => el.classList.remove('active'));
+            if(tab === 'feed') document.getElementById('tab-feed')?.classList.add('active');
+            if(tab === 'likes') document.getElementById('tab-likes')?.classList.add('active');
+            if(tab === 'chats') document.getElementById('tab-chats')?.classList.add('active');
+            if(tab === 'profile') document.getElementById('tab-profile')?.classList.add('active');
 
-        // View Toggles
-        ['view-feed', 'view-likes', 'view-chats', 'view-profile', 'view-chat-room'].forEach(id => {
-            document.getElementById(id).classList.add('hidden');
-        });
-        document.getElementById('view-' + (tab === 'chat-room' ? 'chats' : tab)).classList.remove('hidden'); // Hack for chat room parent
+            // View Toggles
+            ['view-feed', 'view-likes', 'view-chats', 'view-profile', 'view-chat-room'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            const viewId = 'view-' + (tab === 'chat-room' ? 'chats' : tab);
+            document.getElementById(viewId).classList.remove('hidden');
 
-        if(tab === 'feed') {
-            document.getElementById('view-feed').classList.remove('hidden');
-            document.getElementById('filter-btn').classList.remove('hidden');
-            loadFeed();
-        } else {
-            document.getElementById('filter-btn').classList.add('hidden');
-            document.getElementById('filters-panel').classList.remove('visible');
-        }
+            if(tab === 'feed') {
+                document.getElementById('view-feed').classList.remove('hidden');
+                document.getElementById('filter-btn').classList.remove('hidden');
+                loadFeed();
+            } else {
+                document.getElementById('filter-btn').classList.add('hidden');
+                document.getElementById('filters-panel').classList.remove('visible');
+            }
 
-        if(tab === 'likes') {
-            document.getElementById('view-likes').classList.remove('hidden');
-            loadLikes();
-        }
-        if(tab === 'chats') {
-            document.getElementById('view-chats').classList.remove('hidden');
-            loadChats();
-        }
-        if(tab === 'profile') {
-            document.getElementById('view-profile').classList.remove('hidden');
-            renderProfileSelf();
+            if(tab === 'likes') {
+                document.getElementById('view-likes').classList.remove('hidden');
+                loadLikes();
+            }
+            if(tab === 'chats') {
+                document.getElementById('view-chats').classList.remove('hidden');
+                loadChats();
+            }
+            if(tab === 'profile') {
+                document.getElementById('view-profile').classList.remove('hidden');
+                renderProfileSelf();
+            }
+        } catch (e) {
+            console.error("Tab switch error:", e);
         }
     }
 
     // --- FEED ---
-    async function loadFeed() {
+    window.loadFeed = async function() {
         const ageMin = document.getElementById('filter-age-min').value || 18;
         const ageMax = document.getElementById('filter-age-max').value || 99;
         const city = document.getElementById('filter-city').value || '';
@@ -424,14 +429,13 @@
         } catch(e) { console.error(e); }
     }
 
-    function renderCard() {
+    window.renderCard = function() {
         const feedPhotoLayer = document.getElementById('feed-photo-layer');
         const feedContent = document.getElementById('feed-content');
         const feedActions = document.getElementById('feed-actions');
         const feedEmpty = document.getElementById('feed-empty');
         
         if (!profiles[currentProfileIdx]) {
-            // Nothing to show: hide everything, show empty state
             feedPhotoLayer.classList.add('hidden');
             feedContent.classList.add('hidden');
             feedActions.classList.add('hidden');
@@ -439,7 +443,6 @@
             return;
         }
 
-        // Has profile: show everything, hide empty state
         feedEmpty.classList.add('hidden');
         feedPhotoLayer.classList.remove('hidden');
         feedContent.classList.remove('hidden');
@@ -456,12 +459,11 @@
         tags.innerHTML = p.tags.map(t => `<span class="feed-tag">${t.emoji} ${t.name}</span>`).join('');
     }
 
-    async function swipe(isLike) {
+    window.swipe = async function(isLike) {
         if (tg) tg.HapticFeedback.impactOccurred(isLike ? 'heavy' : 'light');
         const p = profiles[currentProfileIdx];
         if (!p) return;
 
-        // Optimistic UI
         currentProfileIdx++;
         renderCard();
 
@@ -480,11 +482,11 @@
         } catch(e) {}
     }
 
-    function toggleFilters() {
+    window.toggleFilters = function() {
         document.getElementById('filters-panel').classList.toggle('visible');
     }
     
-    function applyFilters() {
+    window.applyFilters = function() {
         toggleFilters();
         loadFeed();
     }
@@ -492,11 +494,13 @@
     // --- PROFILE CREATION / EDIT ---
     let selectedTags = [];
     async function loadTags() {
-        const tags = await fetch(`${API_BASE}/tags`).then(r => r.json());
-        const container = document.getElementById('setup-tags');
-        container.innerHTML = tags.map(t => 
-            `<div class="feed-tag" onclick="toggleTag(${t.id}, this)" style="cursor:pointer; border:1px solid #334155">${t.emoji} ${t.name}</div>`
-        ).join('');
+        try {
+            const tags = await fetch(`${API_BASE}/tags`).then(r => r.json());
+            const container = document.getElementById('setup-tags');
+            container.innerHTML = tags.map(t => 
+                `<div class="feed-tag" onclick="toggleTag(${t.id}, this)" style="cursor:pointer; border:1px solid #334155">${t.emoji} ${t.name}</div>`
+            ).join('');
+        } catch(e) {}
     }
 
     window.toggleTag = function(id, el) {
@@ -521,7 +525,7 @@
         reader.readAsDataURL(file);
     });
 
-    async function createProfile() {
+    window.createProfile = async function() {
         const name = document.getElementById('input-name').value;
         const age = document.getElementById('input-age').value;
         const city = document.getElementById('input-city').value;
@@ -560,11 +564,8 @@
 
         if (res.ok) {
             const newUser = await res.json();
-            // IMPORTANT: Update global user variable!
             user = newUser.user || newUser; 
-            // Handle case where API might return {success:true, user:{...}} or just user object
             if (user.id === undefined && newUser.id) user = newUser;
-
             showApp();
         } else {
             alert('Ошибка создания профиля');
@@ -572,10 +573,13 @@
     }
 
     // --- EDIT & DELETE ---
-    function renderProfileSelf() {
-        document.getElementById('my-photo').src = user.photo_url;
-        document.getElementById('my-name').textContent = `${user.name}, ${user.age}`;
-        document.getElementById('my-bio').textContent = user.bio;
+    window.renderProfileSelf = function() {
+        try {
+            if(!user) return;
+            document.getElementById('my-photo').src = user.photo_url;
+            document.getElementById('my-name').textContent = `${user.name}, ${user.age}`;
+            document.getElementById('my-bio').textContent = user.bio || '';
+        } catch(e) { console.error(e); }
     }
 
     window.startEditProfile = function() {
@@ -597,33 +601,35 @@
     }
 
     // --- LIKES ---
-    async function loadLikes() {
+    window.loadLikes = async function() {
         if (!user || !user.id) return;
-        const list = await fetch(`${API_BASE}/likes/${user.id}`).then(r => r.json());
-        const container = document.getElementById('view-likes');
-        const empty = document.getElementById('likes-empty');
-        container.innerHTML = '';
-        
-        if(!list.length) {
-            empty.classList.remove('hidden');
-            return;
-        }
-        empty.classList.add('hidden');
+        try {
+            const list = await fetch(`${API_BASE}/likes/${user.id}`).then(r => r.json());
+            const container = document.getElementById('view-likes');
+            const empty = document.getElementById('likes-empty');
+            container.innerHTML = '';
+            
+            if(!list.length) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
 
-        list.forEach(l => {
-            container.innerHTML += `
-            <div class="list-item">
-                <img src="${l.photo_url}" class="list-avatar">
-                <div class="list-info">
-                    <div class="list-title">${l.name}, ${l.age}</div>
-                    <div class="list-sub">${l.city}</div>
-                </div>
-                <div class="list-actions">
-                    <button class="mini-btn btn-accept" onclick="replyLike(${l.id}, '${l.name}', '${l.photo_url}')">❤️</button>
-                    <button class="mini-btn btn-reject" onclick="rejectLike(${l.id})">✕</button>
-                </div>
-            </div>`;
-        });
+            list.forEach(l => {
+                container.innerHTML += `
+                <div class="list-item">
+                    <img src="${l.photo_url}" class="list-avatar">
+                    <div class="list-info">
+                        <div class="list-title">${l.name}, ${l.age}</div>
+                        <div class="list-sub">${l.city}</div>
+                    </div>
+                    <div class="list-actions">
+                        <button class="mini-btn btn-accept" onclick="replyLike(${l.id}, '${l.name}', '${l.photo_url}')">❤️</button>
+                        <button class="mini-btn btn-reject" onclick="rejectLike(${l.id})">✕</button>
+                    </div>
+                </div>`;
+            });
+        } catch(e) {}
     }
 
     window.replyLike = async function(id, name, photo) {
@@ -645,31 +651,33 @@
     }
 
     // --- CHATS ---
-    async function loadChats() {
+    window.loadChats = async function() {
         if (!user || !user.id) return;
-        const chats = await fetch(`${API_BASE}/chats/${user.id}`).then(r => r.json());
-        const container = document.getElementById('view-chats');
-        const empty = document.getElementById('chats-empty');
-        container.innerHTML = '';
-        
-        if(!chats.length) {
-            empty.classList.remove('hidden');
-            return;
-        }
-        empty.classList.add('hidden');
-        document.getElementById('badge-chats').textContent = chats.length;
-        document.getElementById('badge-chats').classList.remove('hidden');
+        try {
+            const chats = await fetch(`${API_BASE}/chats/${user.id}`).then(r => r.json());
+            const container = document.getElementById('view-chats');
+            const empty = document.getElementById('chats-empty');
+            container.innerHTML = '';
+            
+            if(!chats.length) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+            document.getElementById('badge-chats').textContent = chats.length;
+            document.getElementById('badge-chats').classList.remove('hidden');
 
-        chats.forEach(c => {
-            container.innerHTML += `
-            <div class="list-item" onclick="openChat(${c.user_id}, '${c.user_name}', '${c.user_photo}')">
-                <img src="${c.user_photo}" class="list-avatar">
-                <div class="list-info">
-                    <div class="list-title">${c.user_name}</div>
-                    <div class="list-sub">${c.last_message || 'Написать сообщение...'}</div>
-                </div>
-            </div>`;
-        });
+            chats.forEach(c => {
+                container.innerHTML += `
+                <div class="list-item" onclick="openChat(${c.user_id}, '${c.user_name}', '${c.user_photo}')">
+                    <img src="${c.user_photo}" class="list-avatar">
+                    <div class="list-info">
+                        <div class="list-title">${c.user_name}</div>
+                        <div class="list-sub">${c.last_message || 'Написать сообщение...'}</div>
+                    </div>
+                </div>`;
+            });
+        } catch(e) {}
     }
 
     // --- CHAT ROOM ---
@@ -694,14 +702,16 @@
 
     async function loadMessages() {
         if(!currentChatUser || !user || !user.id) return;
-        const msgs = await fetch(`${API_BASE}/messages/${currentChatUser}/${user.id}`).then(r => r.json());
-        const area = document.getElementById('room-messages');
-        area.innerHTML = msgs.map(m => `
-            <div class="message-bubble ${m.from_user == user.id ? 'msg-own' : 'msg-other'}">
-                ${m.text}
-            </div>
-        `).join('');
-        area.scrollTop = area.scrollHeight;
+        try {
+            const msgs = await fetch(`${API_BASE}/messages/${currentChatUser}/${user.id}`).then(r => r.json());
+            const area = document.getElementById('room-messages');
+            area.innerHTML = msgs.map(m => `
+                <div class="message-bubble ${m.from_user == user.id ? 'msg-own' : 'msg-other'}">
+                    ${m.text}
+                </div>
+            `).join('');
+            area.scrollTop = area.scrollHeight;
+        } catch(e) {}
     }
 
     window.sendMsg = async function() {
