@@ -74,7 +74,6 @@ def safe_execute(query, params=()):
     finally:
         conn.close()
 
-# ✅ КЭШИРОВАНИЕ тегов
 _tags_cache = None
 _tags_cache_time = 0
 
@@ -118,7 +117,6 @@ def init_db():
             except Exception as e:
                 conn.rollback()
             
-            # Миграция: добавить photo_data если ее нет
             try:
                 c.execute('ALTER TABLE users ADD COLUMN photo_data BYTEA')
                 conn.commit()
@@ -129,7 +127,6 @@ def init_db():
             safe_execute('ALTER TABLE users ADD COLUMN daily_likes_used INTEGER DEFAULT 0')
             safe_execute('ALTER TABLE users ADD COLUMN last_like_reset TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
             
-            # ✅ СОЗДАНИЕ ИНДЕКСОВ
             try:
                 c.execute('CREATE INDEX IF NOT EXISTS idx_users_city ON users(city)')
                 c.execute('CREATE INDEX IF NOT EXISTS idx_users_age ON users(age)')
@@ -536,13 +533,20 @@ def get_photo(user_id):
     try:
         user = execute_query('SELECT photo_data FROM users WHERE id = ?', (user_id,), fetch_one=True)
         if user and user['photo_data']:
+            photo_bytes = user['photo_data']
+            if isinstance(photo_bytes, str):
+                photo_bytes = photo_bytes.encode()
+            elif isinstance(photo_bytes, memoryview):
+                photo_bytes = bytes(photo_bytes)
+            
             return send_file(
-                io.BytesIO(user['photo_data']),
+                io.BytesIO(photo_bytes),
                 mimetype='image/jpeg',
-                as_attachment=False
+                as_attachment=False,
+                cache_timeout=86400
             )
-    except:
-        pass
+    except Exception as e:
+        print(f"Photo retrieval error: {e}")
     return '', 404
 
 @app.route('/api/health', methods=['GET'])
